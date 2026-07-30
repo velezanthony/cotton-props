@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { BUILTIN, HTML_GLOB } from './constants';
 import { findIsAttribute, parseIsAttribute } from './dynamic-component';
-import { cottonTagOpenRe } from './regex';
+import { findCottonTags } from './tag-scanner';
 import { getWorkspaceExcludeGlob } from './scanner';
 
 interface ComponentUsage {
@@ -94,13 +94,11 @@ export class UsageIndex {
         const tagCounts = new Map<string, number>();
         const prefixCounts = new Map<string, number>();
 
-        // Opening tags only — captures tag name and the attribute string (no closing tags).
-        const tagRe = cottonTagOpenRe();
-        let match;
-        while ((match = tagRe.exec(text)) !== null) {
-            const tag = match[1];
-            const attrs = match[2] ?? '';
-
+        // Opening tags only — the scanner yields the tag name and its attribute
+        // body (no closing tags). It walks to the real `>`, stepping over quoted
+        // values, so a dispatch whose earlier attribute contains a `>` still has
+        // a complete body for `is=` to be found in.
+        for (const { name: tag, body: attrs } of findCottonTags(text)) {
             if (tag === BUILTIN.COMPONENT) {
                 this.recordDispatch(attrs, tagCounts, prefixCounts);
                 continue;
