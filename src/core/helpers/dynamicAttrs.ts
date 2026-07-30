@@ -1,4 +1,4 @@
-import { cottonTagOpenRe } from '../regex';
+import { findCottonTags, scanTagAttributes } from '../tag-scanner';
 
 /** Offset range of a dynamic attribute's VALUE (the text inside the quotes,
  *  quotes excluded). */
@@ -9,8 +9,6 @@ export interface DynamicAttrValue {
     end: number;
 }
 
-// A `:`-prefixed attribute on a cotton tag, e.g. ` :size="md"` / ` :on='x'`.
-const DYNAMIC_ATTR_RE = /(?:^|\s):([\w-]+)=(["'])([^"']*)\2/g;
 const INTERP_RE = /\{\{|\{%/;
 
 /**
@@ -27,20 +25,19 @@ const INTERP_RE = /\{\{|\{%/;
  */
 export function findDynamicAttrValues(text: string): DynamicAttrValue[] {
     const out: DynamicAttrValue[] = [];
-    const tagRe = cottonTagOpenRe();
-    let tag: RegExpExecArray | null;
-    while ((tag = tagRe.exec(text)) !== null) {
-        const attrs = tag[2];
-        if (!attrs || !attrs.includes(':')) { continue; }
-        const attrsStart = tag.index + `<c-${tag[1]}`.length;
+    for (const tag of findCottonTags(text)) {
+        if (!tag.body.includes(':')) { continue; }
 
-        for (const am of attrs.matchAll(DYNAMIC_ATTR_RE)) {
-            const value = am[3];
-            if (value.length === 0 || INTERP_RE.test(value)) { continue; }
-            // Value sits just before the closing quote at the end of am[0].
-            const valueStartInAttr = am.index! + am[0].length - 1 - value.length;
-            const start = attrsStart + valueStartInAttr;
-            out.push({ start, end: start + value.length });
+        for (const attr of scanTagAttributes(tag.body)) {
+            // Cotton's `:prop` form only. Alpine's `::class` and `@click` are
+            // framework attributes, not Cotton expressions, so tinting them
+            // would claim Django evaluates something it never sees.
+            if (attr.kind !== 'dynamic') { continue; }
+            if (attr.value === undefined || attr.value.length === 0) { continue; }
+            if (INTERP_RE.test(attr.value)) { continue; }
+
+            const start = tag.bodyOffset + attr.valueOffset!;
+            out.push({ start, end: start + attr.value.length });
         }
     }
     return out;
