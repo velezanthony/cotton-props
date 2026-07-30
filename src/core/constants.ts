@@ -75,26 +75,32 @@ export const COTTON_TAG_RE = /c-([\w.-]+)/g;
 
 // ── Diagnostic codes (shared between diagnostics.ts and quick-fix.ts) ──
 
+// Values are the second half of what the Problems panel renders as
+// `source(code)` — `django-cotton-props(duplicate-usage-prop)`. They carry no
+// `cotton-` prefix because the source already says so; repeating it made the
+// cell read `django-cotton-props(cotton-duplicate-usage-prop)`. Nothing outside
+// TypeScript references these strings — every comparison goes through DIAG_CODE
+// itself — so they are free to read well.
 export const DIAG_CODE = {
-    DUPLICATE_PROP: 'cotton-duplicate-prop',
-    MISSING_FROM_CVARS: 'cotton-missing-from-cvars',
-    SYNC_DEFAULT: 'cotton-sync-default',
-    UNDOCUMENTED_PROP: 'cotton-undocumented-prop',
-    UNUSED_PROP: 'cotton-unused-prop',
-    COMPONENT_NOT_FOUND: 'cotton-component-not-found',
-    INVALID_TAG_NAME: 'cotton-invalid-tag-name',
-    UNKNOWN_PROP: 'cotton-unknown-prop',
-    DUPLICATE_USAGE_PROP: 'cotton-duplicate-usage-prop',
-    DEPRECATED_PROP: 'cotton-deprecated-prop',
-    INVALID_VALUE: 'cotton-invalid-value',
-    MISSING_REQUIRED: 'cotton-missing-required',
-    REQUIRED_WITH_DEFAULT_CONFLICT: 'cotton-required-with-default-conflict',
-    TYPE_DEFAULT_MISMATCH: 'cotton-type-default-mismatch',
-    ENUM_DEFAULT_OUT_OF_RANGE: 'cotton-enum-default-out-of-range',
-    DYNAMIC_PREFIX_MISMATCH: 'cotton-dynamic-prefix-mismatch',
-    MISSING_CVARS_TAG: 'cotton-missing-cvars-tag',
-    MISSING_PROP_DESCRIPTION: 'cotton-missing-prop-description',
-    MISSING_IS_ATTRIBUTE: 'cotton-missing-is-attribute',
+    DUPLICATE_PROP: 'duplicate-prop',
+    MISSING_FROM_CVARS: 'missing-from-cvars',
+    SYNC_DEFAULT: 'sync-default',
+    UNDOCUMENTED_PROP: 'undocumented-prop',
+    UNUSED_PROP: 'unused-prop',
+    COMPONENT_NOT_FOUND: 'component-not-found',
+    INVALID_TAG_NAME: 'invalid-tag-name',
+    UNKNOWN_PROP: 'unknown-prop',
+    DUPLICATE_USAGE_PROP: 'duplicate-usage-prop',
+    DEPRECATED_PROP: 'deprecated-prop',
+    INVALID_VALUE: 'invalid-value',
+    MISSING_REQUIRED: 'missing-required',
+    REQUIRED_WITH_DEFAULT_CONFLICT: 'required-with-default-conflict',
+    TYPE_DEFAULT_MISMATCH: 'type-default-mismatch',
+    ENUM_DEFAULT_OUT_OF_RANGE: 'enum-default-out-of-range',
+    DYNAMIC_PREFIX_MISMATCH: 'dynamic-prefix-mismatch',
+    MISSING_CVARS_TAG: 'missing-cvars-tag',
+    MISSING_PROP_DESCRIPTION: 'missing-prop-description',
+    MISSING_IS_ATTRIBUTE: 'missing-is-attribute',
 } as const;
 
 export const BUILTIN_COMPLETIONS: { tag: string; snippet: string; doc: string }[] = [

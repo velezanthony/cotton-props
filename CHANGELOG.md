@@ -14,7 +14,7 @@ This project adheres to [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ### Changed
 
-- **Diagnostics carry a source and a code.** The Problems panel's Source column now shows `django-cotton-props`, and every diagnostic has a code you can filter and search by — `Duplicate prop` and `Unknown prop` had codes defined but never assigned. Messages no longer repeat the extension's name, since the column carries it.
+- **Diagnostics carry a source and a code.** The Problems panel renders the two together as `django-cotton-props(duplicate-usage-prop)`, so every finding says which extension produced it and which rule fired, and both are filterable. `Duplicate prop` and `Unknown prop` had codes defined but never assigned. Messages no longer repeat the extension's name, since the columns carry it.
 
 ### Fixed
 
