@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { isCottonFile } from '../../scanner';
-import { isSupportedLanguage } from '../../constants';
+import { DIAGNOSTIC_SOURCE, isSupportedLanguage } from '../../constants';
 import type { UsageIndex } from '../../usage-index';
 import {
     checkDuplicateProps,
@@ -59,6 +59,12 @@ export class DiagnosticProvider {
         }
 
         diagnostics.push(...validateComponentUsage(document, text));
+
+        // Stamped once, here, rather than at each of the ~20 construction sites:
+        // one of them would eventually be missed. `source` is what fills the
+        // Problems panel's Source column and lets users filter by producer, and
+        // it is why messages don't need to repeat the extension's name.
+        for (const diag of diagnostics) { diag.source = DIAGNOSTIC_SOURCE; }
 
         this.collection.set(document.uri, diagnostics);
     }

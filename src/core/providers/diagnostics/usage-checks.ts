@@ -1,8 +1,8 @@
 import * as vscode from 'vscode';
-import { BUILTIN, BUILTIN_TAGS, COTTON_TAG_PREFIX, EXTENSION_NAME, DIAG_CODE } from '../../constants';
+import { BUILTIN, BUILTIN_TAGS, COTTON_TAG_PREFIX, DIAG_CODE } from '../../constants';
 import { findComponentFile, getCachedProps, isStrict } from '../../scanner';
 import { findIsAttribute, parseIsAttribute } from '../../dynamic-component';
-import { findCottonTags, scanTagAttributes, type CottonTag, type TagAttribute } from '../../tag-scanner';
+import { findCottonTags, isValidTagName, scanTagAttributes, type CottonTag, type TagAttribute } from '../../tag-scanner';
 import type { PropDefinition } from '../../models';
 import { attachQuickFix } from './quick-fix-data';
 import { nameVariations } from './shared';
@@ -20,7 +20,7 @@ function checkComponentNotFound(document: vscode.TextDocument, tag: string, tagI
     const end = document.positionAt(tagIndex + `<c-${tag}`.length);
     const diag = new vscode.Diagnostic(
         new vscode.Range(start, end),
-        `${EXTENSION_NAME}: component '${tag}' not found`,
+        `component '${tag}' not found`,
         vscode.DiagnosticSeverity.Error,
     );
     diag.code = DIAG_CODE.COMPONENT_NOT_FOUND;
@@ -40,7 +40,7 @@ export function checkComponentDispatch(
         const end = document.positionAt(tagIndex + (COTTON_TAG_PREFIX + BUILTIN.COMPONENT).length);
         const diag = new vscode.Diagnostic(
             new vscode.Range(start, end),
-            `${EXTENSION_NAME}: <c-component> requires an 'is' (or ':is') attribute`,
+            `<c-component> requires an 'is' (or ':is') attribute`,
             vscode.DiagnosticSeverity.Error,
         );
         diag.code = DIAG_CODE.MISSING_IS_ATTRIBUTE;
@@ -58,7 +58,7 @@ export function checkComponentDispatch(
             document.positionAt(valueOffset),
             document.positionAt(valueOffset + parsed.target.length),
         ),
-        `${EXTENSION_NAME}: component '${parsed.target}' not found`,
+        `component '${parsed.target}' not found`,
         vscode.DiagnosticSeverity.Error,
     );
     diag.code = DIAG_CODE.COMPONENT_NOT_FOUND;
@@ -177,6 +177,22 @@ export function validateComponentUsage(document: vscode.TextDocument, text: stri
 
         if (BUILTIN_TAGS.includes(tag)) { continue; }
 
+        // `<c-...>` matches the head pattern because `.` must be allowed for
+        // `atoms.button`. Saying such a name was "not found" reads as a missing
+        // file; it can never name a component at all.
+        if (!isValidTagName(tag)) {
+            const start = document.positionAt(cottonTag.index);
+            const end = document.positionAt(cottonTag.index + `<c-${tag}`.length);
+            const diag = new vscode.Diagnostic(
+                new vscode.Range(start, end),
+                `'${tag}' is not a valid component name — expected segments like 'button' or 'atoms.button'`,
+                vscode.DiagnosticSeverity.Error,
+            );
+            diag.code = DIAG_CODE.INVALID_TAG_NAME;
+            diagnostics.push(diag);
+            continue;
+        }
+
         const filePath = findComponentFile(tag);
         if (!filePath) {
             diagnostics.push(checkComponentNotFound(document, tag, cottonTag.index));
@@ -203,11 +219,13 @@ export function validateComponentUsage(document: vscode.TextDocument, text: stri
             const key = duplicateKey(attr);
 
             if (seenKeys.has(key)) {
-                diagnostics.push(new vscode.Diagnostic(
+                const dup = new vscode.Diagnostic(
                     new vscode.Range(document.positionAt(nameIdx), document.positionAt(nameIdx + attr.raw.length)),
                     `Duplicate prop '${attrName}' on '${tag}'`,
                     vscode.DiagnosticSeverity.Error,
-                ));
+                );
+                dup.code = DIAG_CODE.DUPLICATE_USAGE_PROP;
+                diagnostics.push(dup);
                 continue;
             }
             seenKeys.add(key);
@@ -220,11 +238,13 @@ export function validateComponentUsage(document: vscode.TextDocument, text: stri
 
             if (!knownNames.has(attrName)) {
                 if (isStrict(filePath)) {
-                    diagnostics.push(new vscode.Diagnostic(
+                    const unknown = new vscode.Diagnostic(
                         new vscode.Range(document.positionAt(nameIdx), document.positionAt(nameIdx + attrName.length)),
                         `Unknown prop '${attrName}' on '${tag}' (@strict mode)`,
                         vscode.DiagnosticSeverity.Warning,
-                    ));
+                    );
+                    unknown.code = DIAG_CODE.UNKNOWN_PROP;
+                    diagnostics.push(unknown);
                 }
                 continue;
             }

@@ -1,5 +1,10 @@
 export const EXTENSION_NAME = 'Django Cotton Props';
 
+/** Fills the Problems panel's Source column and lets users filter diagnostics
+ *  by producer. Short and id-like, matching how other extensions identify
+ *  themselves there (`tailwindcss`, `eslint`). */
+export const DIAGNOSTIC_SOURCE = 'django-cotton-props';
+
 /** The literal prefix used on every Cotton tag (`<c-NAME>`). Keep this
  *  centralised — `.length` calculations in providers should derive from
  *  it so future renames are a one-line change. */
@@ -77,6 +82,7 @@ export const DIAG_CODE = {
     UNDOCUMENTED_PROP: 'cotton-undocumented-prop',
     UNUSED_PROP: 'cotton-unused-prop',
     COMPONENT_NOT_FOUND: 'cotton-component-not-found',
+    INVALID_TAG_NAME: 'cotton-invalid-tag-name',
     UNKNOWN_PROP: 'cotton-unknown-prop',
     DUPLICATE_USAGE_PROP: 'cotton-duplicate-usage-prop',
     DEPRECATED_PROP: 'cotton-deprecated-prop',

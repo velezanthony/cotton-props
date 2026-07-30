@@ -8,6 +8,16 @@ This project adheres to [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ### Fixed
 
+- **A `<c-tag>` written inside a comment is no longer treated as a usage.** Prose mentioning a component — `{# la variable no se puede meter en el atributo del <c-...> #}`, an `<!-- ... -->` note, a `{% comment %}` block — produced real errors on a sentence. `<c-...>` in particular arrived as a component named `...`, because the tag pattern has to allow `.` for `atoms.button`. Annotation comments are the deliberate exception: `{# @prop ... | description:"usa <c-atoms.icon>" #}`, `{# @description ... #}` and `{# @trigger ... #}` are Cotton definitions, so a component named inside one is still resolved — you keep hover and go-to-definition there, and still get told when the docs name a component that no longer exists.
+- **A malformed name is reported as malformed.** `<c-...>` now reads `'...' is not a valid component name` instead of `component '...' not found`, which suggested a missing file.
+- **A `<c-vars>` written inside a comment no longer shadows the real declaration.** An example in a comment was taken for the declaration, so every parity check against the real one was silently skipped. `{% comment %}` blocks are now recognised as comments too, everywhere comments are blanked.
+
+### Changed
+
+- **Diagnostics carry a source and a code.** The Problems panel's Source column now shows `django-cotton-props`, and every diagnostic has a code you can filter and search by — `Duplicate prop` and `Unknown prop` had codes defined but never assigned. Messages no longer repeat the extension's name, since the column carries it.
+
+### Fixed
+
 - **No more phantom props from attribute values.** Attributes are now read by a real scanner (`src/core/tag-scanner.ts`) instead of a regex, which fixes a family of false diagnostics where the contents of an attribute value were tokenized as if they were more attributes:
   - A `>` inside a value — an arrow function, `a > b`, `{% if a > b %}` — truncated the tag body and threw away the closing quote, so every identifier in an `x-data`-style expression became a prop (`Duplicate prop 'this'`).
   - Framework prefixes were unrecognised, so `@click="run('{{ a }}', '{{ b }}')"` and `::value="rows['k' + i]"` had their values walked into (`Duplicate prop 'option'`, `Duplicate prop 'p'`).
