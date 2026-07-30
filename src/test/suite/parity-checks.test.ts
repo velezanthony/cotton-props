@@ -470,27 +470,37 @@ suite('Parity: missing-description severity setting', () => {
 
     suiteTeardown(async () => { await setSeverity(undefined); });
 
-    test('"warning" promotes the diagnostic from Hint to Warning', async () => {
+    // Each of these writes a real workspace setting and waits for VS Code to
+    // propagate it, which on a loaded machine runs past mocha's 2s default —
+    // this suite was the one flaky spot in an otherwise deterministic run. The
+    // 5s budget matches what the other host-driven suites already use.
+    const SETTING_PROPAGATION_MS = 5000;
+
+    test('"warning" promotes the diagnostic from Hint to Warning', async function () {
+        this.timeout(SETTING_PROPAGATION_MS);
         await setSeverity('warning');
         const diags = checkMissingDescription(makeDoc(text), text);
         assert.strictEqual(diags.length, 1);
         assert.strictEqual(diags[0].severity, vscode.DiagnosticSeverity.Warning);
     });
 
-    test('"off" disables the diagnostic entirely', async () => {
+    test('"off" disables the diagnostic entirely', async function () {
+        this.timeout(SETTING_PROPAGATION_MS);
         await setSeverity('off');
         const diags = checkMissingDescription(makeDoc(text), text);
         assert.strictEqual(diags.length, 0);
     });
 
-    test('"hint" (default) keeps Hint severity', async () => {
+    test('"hint" (default) keeps Hint severity', async function () {
+        this.timeout(SETTING_PROPAGATION_MS);
         await setSeverity('hint');
         const diags = checkMissingDescription(makeDoc(text), text);
         assert.strictEqual(diags.length, 1);
         assert.strictEqual(diags[0].severity, vscode.DiagnosticSeverity.Hint);
     });
 
-    test('unrecognised values fall back to Hint', async () => {
+    test('unrecognised values fall back to Hint', async function () {
+        this.timeout(SETTING_PROPAGATION_MS);
         await setSeverity('error'); // not in the enum — defensive default
         const diags = checkMissingDescription(makeDoc(text), text);
         assert.strictEqual(diags.length, 1);

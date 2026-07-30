@@ -247,6 +247,301 @@ Usage — `name`, `placeholder`, `type` pass through via `attrs`:
 
 </details>
 
+## Diagnostic rules
+
+Every diagnostic this extension reports carries a **source** and a **code**, which the Problems panel renders together:
+
+```
+django-cotton-props(duplicate-usage-prop)
+```
+
+Type a code into the panel's filter box to isolate one rule, or `django-cotton-props` to see only this extension's findings.
+
+Rules are split by where they fire. **Definition rules** run inside a component's own template — the file under `templates/cotton/` that declares `@prop` annotations and a `<c-vars>` tag. **Usage rules** run wherever a component is written, in any template.
+
+> Examples below are minimal: each is the smallest input that triggers the rule.
+
+### Definition rules
+
+These check that a component's `@prop` annotations and its `<c-vars>` declaration agree with each other.
+
+#### `duplicate-prop`
+
+**Severity:** Error · **Quick fix:** no
+
+> `Duplicate @prop definition 'NAME'`
+
+```django
+{# @prop title:text #}
+{# @prop title:text #}
+<c-vars title="x">
+```
+
+**Why it matters:** _TODO_
+
+#### `missing-from-cvars`
+
+**Severity:** Warning · **Quick fix:** yes — adds the attribute to `<c-vars>`
+
+> `@prop 'NAME' is defined but missing from <c-vars>`
+> `@prop 'NAME' defines default 'X' but is missing from <c-vars>`
+
+```django
+{# @prop title:text #}
+{# @prop other:text #}
+<c-vars other="x">
+```
+
+**Why it matters:** _TODO_
+
+#### `sync-default`
+
+**Severity:** Information for the two one-sided cases, Warning when both sides disagree · **Quick fix:** yes
+
+Three variants, all meaning "`@prop` and `<c-vars>` disagree about a default":
+
+> `@prop defines default 'X' for 'NAME' but <c-vars> has no value`
+> `'NAME' has default 'X' in <c-vars> but @prop doesn't document a default`
+> `Default mismatch for 'NAME': @prop says 'X' but <c-vars> has 'Y'`
+
+```django
+{# @prop title:text | default:"a" #}
+<c-vars title="b">
+```
+
+**Why it matters:** _TODO_
+
+#### `undocumented-prop`
+
+**Severity:** Information · **Quick fix:** yes — inserts the `@prop` line
+
+> `'NAME' is not documented. Add: …`
+
+```django
+{# @prop title:text #}
+<c-vars title="a" undocumented="b">
+```
+
+**Why it matters:** _TODO_
+
+#### `unused-prop`
+
+**Severity:** Warning · **Quick fix:** no
+
+> `'NAME' is defined in <c-vars> but never used in the template`
+
+```django
+{# @prop title:text #}
+<c-vars title="a">
+<div>nothing references it</div>
+```
+
+**Why it matters:** _TODO_
+
+#### `missing-cvars-tag`
+
+**Severity:** Warning · **Quick fix:** yes — inserts an empty `<c-vars>`
+
+> `Component declares @prop annotations but has no <c-vars> tag — Cotton won't pass anything to the template.`
+
+```django
+{# @prop title:text #}
+<div>no c-vars anywhere</div>
+```
+
+**Why it matters:** _TODO_
+
+#### `missing-prop-description`
+
+**Severity:** Hint by default — configurable via `djangoCottonProps.diagnostics.missingDescription.severity` (`hint` / `warning` / `off`) · **Quick fix:** yes
+
+> `'NAME': @prop has no '| description:' filter.`
+
+```django
+{# @prop title:text #}
+<c-vars title="a">
+```
+
+**Why it matters:** _TODO_
+
+#### `required-with-default-conflict`
+
+**Severity:** Error · **Quick fix:** yes
+
+> `'NAME': cannot use '| required' with '| default:' — a required prop has no fallback. The parser will silently drop 'required'.`
+
+```django
+{# @prop title:text | required | default:"x" #}
+```
+
+**Why it matters:** _TODO_
+
+#### `type-default-mismatch`
+
+**Severity:** Error · **Quick fix:** no
+
+> `'NAME': type is 'boolean' but default 'X' is not a recognised boolean (use True/False/1/0).`
+> `'NAME': type is 'number' but default 'X' is not a valid number.`
+
+```django
+{# @prop loading:boolean | default:"yes" #}
+```
+
+**Why it matters:** _TODO_
+
+#### `enum-default-out-of-range`
+
+**Severity:** Error · **Quick fix:** yes — one action per allowed option
+
+> `'NAME': @prop default 'X' is not in options [a, b].`
+> `'NAME': <c-vars> value 'X' is not in options [a, b].`
+
+```django
+{# @prop variant:select['a','b'] | default:"z" #}
+```
+
+**Why it matters:** _TODO_
+
+#### `dynamic-prefix-mismatch`
+
+**Severity:** Error · **Quick fix:** yes — toggles the `:` prefix
+
+> `'NAME': ':' prefix mismatch — @prop is ':NAME' but <c-vars> has 'NAME'.`
+
+```django
+{# @prop :size:text #}
+<c-vars size="md">
+```
+
+**Why it matters:** _TODO_
+
+### Usage rules
+
+These check the tags you write, wherever you write them.
+
+#### `component-not-found`
+
+**Severity:** Error · **Quick fix:** no
+
+> `component 'NAME' not found`
+
+```django
+<c-atoms.does-not-exist />
+```
+
+Also fires on a `<c-component is="…">` dispatch whose literal target does not resolve.
+
+**Why it matters:** _TODO_
+
+#### `invalid-tag-name`
+
+**Severity:** Error · **Quick fix:** no
+
+> `'NAME' is not a valid component name — expected segments like 'button' or 'atoms.button'`
+
+```django
+<c-...>
+```
+
+Distinct from `component-not-found`: the name could never resolve to any file, whereas "not found" means a well-formed name with no matching template.
+
+**Why it matters:** _TODO_
+
+#### `missing-required`
+
+**Severity:** Warning · **Quick fix:** yes — inserts the missing attribute
+
+> `Missing required prop 'NAME' on 'TAG'`
+
+```django
+{# in the component: {# @prop title:text | required #} #}
+<c-atoms.card />
+```
+
+**Why it matters:** _TODO_
+
+#### `invalid-value`
+
+**Severity:** Error · **Quick fix:** no
+
+Three variants, one per constrained type:
+
+> `Invalid value 'X' for 'NAME'. Expected: a, b`
+> `Invalid boolean 'X' for 'NAME'. Expected: True or False`
+> `Invalid number 'X' for 'NAME'`
+
+```django
+{# in the component: {# @prop variant:select['a','b'] #} #}
+<c-atoms.card variant="zzz" />
+```
+
+Values containing `{{ }}` or `{% %}`, and `:`-prefixed expression attributes, are never checked — the extension cannot evaluate Django.
+
+**Why it matters:** _TODO_
+
+#### `duplicate-usage-prop`
+
+**Severity:** Error · **Quick fix:** no
+
+> `Duplicate prop 'NAME' on 'TAG'`
+
+```django
+<c-atoms.card size="md" size="lg" />
+```
+
+`size` and `:size` collide, because Cotton treats them as the same prop. Framework attributes (`@click`, `::class`) are keyed separately, so `@click` never collides with a prop called `click`.
+
+**Why it matters:** _TODO_
+
+#### `unknown-prop`
+
+**Severity:** Warning · **Quick fix:** no · **Only in `@strict` components**
+
+> `Unknown prop 'NAME' on 'TAG' (@strict mode)`
+
+```django
+{# in the component: {# @strict #} #}
+<c-atoms.card nonsense="x" />
+```
+
+**Why it matters:** _TODO_
+
+#### `deprecated-prop`
+
+**Severity:** Hint, rendered with a strikethrough · **Quick fix:** no
+
+> `Deprecated prop 'NAME' on 'TAG'`
+> `Deprecated prop 'NAME' on 'TAG': REASON`
+
+```django
+{# in the component: {# @prop old:text | deprecated:"use 'new' instead" #} #}
+<c-atoms.card old="x" />
+```
+
+**Why it matters:** _TODO_
+
+#### `missing-is-attribute`
+
+**Severity:** Error · **Quick fix:** no
+
+> `<c-component> requires an 'is' (or ':is') attribute`
+
+```django
+<c-component />
+```
+
+**Why it matters:** _TODO_
+
+### What is never checked
+
+Deliberate blind spots, so a rule firing there would be a bug:
+
+- **Anything inside a comment.** `{# … #}`, `<!-- … -->` and `{% comment %}` blocks are prose. A `<c-tag>` written in one is not a usage. The exception is annotation comments — `{# @prop … #}`, `{# @description … #}`, `{# @trigger … #}` — which are Cotton definitions, so a component named inside one is still resolved.
+- **The contents of an attribute value.** Whatever lives inside `x-data="…"`, `@click="…"` or `::value="…"` is JavaScript or a Django expression, never more attributes.
+- **Framework attributes.** `@click`, `::class`, `x-on:click.away` are passed through by Cotton and are never treated as declared props.
+- **Django expressions.** A value containing `{{ }}` or `{% %}`, and any `:`-prefixed attribute, is evaluated by Django at render time. The extension has no context to resolve it, so it never validates it.
+
+
 ## Settings
 
 | Setting | Default | Description |
