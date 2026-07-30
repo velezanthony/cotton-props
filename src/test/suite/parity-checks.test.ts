@@ -645,3 +645,56 @@ suite('Parity: <c-vars> comments and casing', () => {
         assert.strictEqual(checkEnumDefaultOutOfRange(makeDoc(text), text).length, 1);
     });
 });
+
+// ── A commented <c-vars> must not shadow the real declaration ─────────────
+//
+// parser.ts and component-file-checks.ts blank comments before locating
+// <c-vars>; these rules did not, so an example inside a comment was taken for
+// the declaration and every check against the real one was silently skipped.
+
+suite('Parity: a commented <c-vars> does not shadow the real one', () => {
+
+    test('the real declaration is checked, not the one in a Django comment', () => {
+        const text = [
+            `{# @prop variant:select['a','b'] #}`,
+            `{# ejemplo de uso: <c-vars variant="a"> #}`,
+            `<c-vars variant="zzz">`,
+        ].join('\n');
+        const diags = checkEnumDefaultOutOfRange(makeDoc(text), text);
+        assert.strictEqual(diags.length, 1, 'the commented example hid the real declaration');
+        assert.ok(diags[0].message.includes('zzz'));
+    });
+
+    test('an example inside an @prop annotation does not shadow it either', () => {
+        const text = [
+            `{# @prop variant:select['a','b'] | description:"asi: <c-vars variant='a'>" #}`,
+            `<c-vars variant="zzz">`,
+        ].join('\n');
+        assert.strictEqual(checkEnumDefaultOutOfRange(makeDoc(text), text).length, 1,
+            'an annotation is a definition, but a <c-vars> inside it is documentation');
+    });
+
+    test('a <c-vars> inside an HTML comment does not shadow the real one', () => {
+        const text = [
+            `{# @prop variant:select['a','b'] #}`,
+            `<!-- <c-vars variant="a"> -->`,
+            `<c-vars variant="zzz">`,
+        ].join('\n');
+        assert.strictEqual(checkEnumDefaultOutOfRange(makeDoc(text), text).length, 1);
+    });
+
+    test('a <c-vars> inside {% comment %} does not shadow the real one', () => {
+        const text = [
+            `{# @prop variant:select['a','b'] #}`,
+            `{% comment %} <c-vars variant="a"> {% endcomment %}`,
+            `<c-vars variant="zzz">`,
+        ].join('\n');
+        assert.strictEqual(checkEnumDefaultOutOfRange(makeDoc(text), text).length, 1);
+    });
+
+    test('missing-cvars is not satisfied by a declaration that only exists in a comment', () => {
+        const text = '{# @prop size:text #}\n{# ejemplo: <c-vars size="md"> #}';
+        assert.strictEqual(checkMissingCVars(makeDoc(text), text).length, 1,
+            'there is no real <c-vars> — only one written inside prose');
+    });
+});

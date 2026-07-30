@@ -5,6 +5,7 @@
  */
 
 import { findTagEnd } from '../../../tag-scanner';
+import { blankComments } from '../../../parser';
 
 /** `<c-vars` head. Case-insensitive because `cvarsOpenRe()` in regex.ts is too —
  *  `parser.ts` accepts `<C-VARS>`, so these rules must see the same declaration
@@ -19,7 +20,13 @@ const CVARS_HEAD_RE = /<c-vars\b/i;
  *  (`<c-vars hint="a > b" variant="zzz">`) lost every attribute after it and the
  *  rules stopped checking them. */
 export function findCVarsBody(text: string): { body: string; bodyOffset: number } | undefined {
-    const head = CVARS_HEAD_RE.exec(text);
+    // Locate the head in a comment-blanked copy so an example written inside a
+    // comment cannot be taken for the declaration and hide the real one — the
+    // same guard parser.ts and component-file-checks.ts already apply. Blanking
+    // preserves offsets, so the body is still read from the original text.
+    // Annotation comments are blanked here too: `{# @prop ... #}` is a
+    // definition, but a `<c-vars>` written inside one is documentation.
+    const head = CVARS_HEAD_RE.exec(blankComments(text));
     if (!head) { return undefined; }
     const bodyOffset = head.index + head[0].length;
     const end = findTagEnd(text, bodyOffset);

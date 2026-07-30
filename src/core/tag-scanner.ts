@@ -265,6 +265,75 @@ function tagHeadRe(): RegExp {
     return /<c-([\w.-]+)/g;
 }
 
+/** Dotted segments of word characters — `atoms.chip-group`. Rejects a name that
+ *  is only dots, or has a leading, trailing, or doubled dot. */
+const VALID_TAG_NAME_RE = /^[\w-]+(?:\.[\w-]+)*$/;
+
+/**
+ * Whether `name` could name a Cotton component at all.
+ *
+ * The head pattern has to allow `.` so `atoms.button` matches, which means
+ * `<c-...>` — a perfectly ordinary thing to write in a sentence — arrives as the
+ * name `...`. Reporting that as a component that was not found reads as a
+ * missing file; it is malformed, and callers should say so instead.
+ */
+export function isValidTagName(name: string): boolean {
+    return VALID_TAG_NAME_RE.test(name);
+}
+
+/** Cotton annotations live inside `{# ... #}`, so a comment carrying one is a
+ *  DEFINITION, not prose. Markup written inside it — `@trigger`'s HTML, a
+ *  `description:` that names a component — is a real reference worth resolving,
+ *  which is why annotation comments are not skipped. */
+const COTTON_ANNOTATION_RE = /^\{#\s*@(?:prop|description|slot|trigger|strict|ignore-unused)\b/;
+
+/** Comment forms whose contents are never Cotton code. `{# #}` is handled
+ *  separately because it is also where annotations live. */
+const PLAIN_COMMENTS: readonly [string, string][] = [
+    ['<!--', '-->'],
+    ['{% comment %}', '{% endcomment %}'],
+];
+
+/**
+ * Half-open `[start, end)` ranges whose contents must not be read as markup.
+ *
+ * Ranges rather than blanking the text: offsets stay exactly as the caller sees
+ * them with no second copy of the document, and `{% comment %}` — which
+ * `blankComments()` does not cover — is handled here too.
+ */
+function commentRanges(text: string): [number, number][] {
+    const ranges: [number, number][] = [];
+
+    for (let i = 0; i < text.length;) {
+        const ch = text[i];
+
+        if (ch === '{' && text.startsWith('{#', i)) {
+            const close = text.indexOf('#}', i + 2);
+            const end = close === -1 ? text.length : close + 2;
+            // An annotation is a definition; only prose is skipped.
+            if (!COTTON_ANNOTATION_RE.test(text.substring(i, end))) { ranges.push([i, end]); }
+            i = end;
+            continue;
+        }
+
+        let matched = false;
+        for (const [open, close] of PLAIN_COMMENTS) {
+            if (!text.startsWith(open, i)) { continue; }
+            const closeIdx = text.indexOf(close, i + open.length);
+            // Unterminated: swallow the remainder rather than reading half a
+            // comment as markup.
+            const end = closeIdx === -1 ? text.length : closeIdx + close.length;
+            ranges.push([i, end]);
+            i = end;
+            matched = true;
+            break;
+        }
+        if (!matched) { i++; }
+    }
+
+    return ranges;
+}
+
 /**
  * Find every `<c-NAME ...>` opening tag in `text`, quote- and Django-aware.
  *
@@ -276,9 +345,16 @@ function tagHeadRe(): RegExp {
 export function findCottonTags(text: string): CottonTag[] {
     const tags: CottonTag[] = [];
     const re = tagHeadRe();
+    const skip = commentRanges(text);
+    let skipAt = 0;
 
     let m: RegExpExecArray | null;
     while ((m = re.exec(text)) !== null) {
+        // Ranges are in source order and so are the matches, so the cursor only
+        // moves forward — no rescanning the list per match.
+        while (skipAt < skip.length && skip[skipAt][1] <= m.index) { skipAt++; }
+        if (skipAt < skip.length && m.index >= skip[skipAt][0]) { continue; }
+
         const bodyOffset = m.index + m[0].length;
         const found = findTagEnd(text, bodyOffset);
         if (!found) { continue; }

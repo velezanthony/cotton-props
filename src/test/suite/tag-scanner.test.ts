@@ -1,5 +1,5 @@
 import * as assert from 'assert';
-import { scanTagAttributes, findCottonTags } from '../../core/tag-scanner';
+import { scanTagAttributes, findCottonTags, isValidTagName } from '../../core/tag-scanner';
 
 // These fixtures are synthetic. Each one encodes a shape that the previous
 // regex-based reader got wrong: a `>` inside a value truncated the tag body, an
@@ -176,5 +176,110 @@ suite('tag-scanner: findCottonTags', () => {
 
     test('an unterminated tag is skipped rather than swallowing the document', () => {
         assert.deepStrictEqual(findCottonTags('<c-demo.card size="md"\n\n<div>text</div>').map(t => t.name), []);
+    });
+});
+
+// ── Comment regions ───────────────────────────────────────────────────────
+//
+// A `<c-tag>` written inside prose is not a usage. The scanner used to read the
+// raw document, so `{# ... del <c-...> — Cotton no la interpola #}` produced a
+// tag named `...` and a "component not found" error on a sentence.
+//
+// Annotation comments are the deliberate exception: `{# @prop ... #}` and
+// friends ARE Cotton definitions, and a tag named inside one is a real
+// reference worth resolving — a hover target, and a stale-docs error when the
+// component it names no longer exists.
+
+suite('tag-scanner: comment regions', () => {
+
+    function tagNames(text: string): string[] {
+        return findCottonTags(text).map(t => t.name);
+    }
+
+    test('a tag inside a plain Django comment is not a usage', () => {
+        assert.deepStrictEqual(
+            tagNames('{# no metas la variable en el atributo del <c-atoms.card> #}'),
+            [],
+        );
+    });
+
+    test('a tag inside an HTML comment is not a usage', () => {
+        assert.deepStrictEqual(tagNames('<!-- ojo: no uses <c-atoms.legacy> aqui -->'), []);
+    });
+
+    test('a tag inside a {% comment %} block is not a usage', () => {
+        assert.deepStrictEqual(
+            tagNames('{% comment %} <c-atoms.viejo> ya no existe {% endcomment %}'),
+            [],
+        );
+    });
+
+    test('a tag inside an @prop annotation IS a usage', () => {
+        assert.deepStrictEqual(
+            tagNames(`{# @prop icon:text | description:"usa <c-atoms.icon>" #}`),
+            ['atoms.icon'],
+        );
+    });
+
+    test('a tag inside an @description annotation IS a usage', () => {
+        assert.deepStrictEqual(
+            tagNames('{# @description Un wrapper de <c-atoms.card> #}'),
+            ['atoms.card'],
+        );
+    });
+
+    test('a tag inside an @trigger annotation IS a usage', () => {
+        assert.deepStrictEqual(
+            tagNames('{# @trigger <c-atoms.button>Open</c-atoms.button> #}'),
+            ['atoms.button'],
+        );
+    });
+
+    test('real usages around a comment are still found', () => {
+        const text = '<c-a.one />\n{# olvida <c-a.ignored> #}\n<c-a.two />';
+        assert.deepStrictEqual(tagNames(text), ['a.one', 'a.two']);
+    });
+
+    test('offsets stay aligned with the original text after skipping a comment', () => {
+        const text = '{# <c-a.skipped> #}\n<c-a.real x="1">';
+        const [tag] = findCottonTags(text);
+        assert.strictEqual(tag.name, 'a.real');
+        assert.strictEqual(tag.index, text.indexOf('<c-a.real'));
+    });
+
+    test('an unterminated comment swallows the rest rather than emitting tags', () => {
+        assert.deepStrictEqual(tagNames('{# olvide cerrar <c-a.one /> <c-a.two />'), []);
+    });
+
+    test('a comment inside a tag body does not hide the tag itself', () => {
+        assert.deepStrictEqual(tagNames('<c-a.card {# nota #} size="md">'), ['a.card']);
+    });
+});
+
+suite('tag-scanner: isValidTagName', () => {
+
+    test('accepts plain and dotted names', () => {
+        for (const name of ['button', 'atoms.button', 'a.b.c', 'chip-group', 'atoms.chip-group']) {
+            assert.strictEqual(isValidTagName(name), true, `expected '${name}' to be valid`);
+        }
+    });
+
+    // `<c-...>` matches the head pattern because `.` has to be allowed for
+    // `atoms.button`, so it arrives here as the name `...`. Reporting it as a
+    // component that was not found reads as a missing file; it is malformed.
+    test('rejects names built only from dots', () => {
+        for (const name of ['...', '.', '..']) {
+            assert.strictEqual(isValidTagName(name), false, `expected '${name}' to be invalid`);
+        }
+    });
+
+    test('rejects leading, trailing and doubled dots', () => {
+        for (const name of ['.button', 'button.', 'atoms..button', 'atoms.']) {
+            assert.strictEqual(isValidTagName(name), false, `expected '${name}' to be invalid`);
+        }
+    });
+
+    test('rejects an empty name', () => {
+        assert.strictEqual(isValidTagName(''), false);
     });
 });

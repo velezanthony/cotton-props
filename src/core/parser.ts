@@ -13,7 +13,10 @@ const OPTION_RE = /'([^']*)'/g;
 const DESCRIPTION_RE = /\{#\s*@description\s+(.+?)\s*#\}/;
 const SLOT_RE = /\{#\s*@slot(?::([\w-]+))?\s*(.*?)\s*#\}/g;
 const TRIGGER_RE = /\{#\s*@trigger\s+(.*?)(?:\s*—\s*[^#]*)?\s*#\}/;
-const COMMENT_RE = /\{#[\s\S]*?#\}|<!--[\s\S]*?-->/g;
+// `{% comment %}` blocks count too: a `<c-vars>` written inside one is commented
+// out just as thoroughly as one inside `{# #}`, and used to shadow the real
+// declaration because this pattern did not cover it.
+const COMMENT_RE = /\{#[\s\S]*?#\}|<!--[\s\S]*?-->|\{%\s*comment\s*%\}[\s\S]*?\{%\s*endcomment\s*%\}/g;
 // Mirrors the gallery's _ACCEPTS_ATTRS heuristic — three OR alternates so
 // any of {{ attrs }}, :attrs="attrs", or attrs="attrs" registers as a hit.
 const ACCEPTS_ATTRS_RE = /\{\{\s*attrs\b|:?attrs="attrs"|\battrs="attrs"/;
