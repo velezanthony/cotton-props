@@ -497,3 +497,102 @@ suite('Parity: missing-description severity setting', () => {
         assert.strictEqual(diags[0].severity, vscode.DiagnosticSeverity.Hint);
     });
 });
+
+// ── <c-vars> reading parity ───────────────────────────────────────────────
+//
+// Commit 3b8d97f unified <c-vars> attribute reading onto cvarsAttrRe(), but
+// enum-default-out-of-range and dynamic-prefix-mismatch kept their own local
+// patterns. Those read a value only when it was double-quoted or contained no
+// whitespace, so a single-quoted default WITH spaces was walked into and the
+// words inside it became phantom attributes. A phantom only surfaced when it
+// happened to name another declared prop — which is exactly when it lies.
+
+suite('Parity: <c-vars> values are never walked into', () => {
+
+    test('a word inside a single-quoted default is not read as an attribute', () => {
+        const text = [
+            '{# @prop :size:text #}',
+            '{# @prop label:text #}',
+            `<c-vars label='choose size here' :size="md">`,
+        ].join('\n');
+        const diags = checkDynamicPrefixMismatch(makeDoc(text), text);
+        assert.deepStrictEqual(diags.map(d => d.message), [],
+            'the `size` inside the label default is not a <c-vars> attribute');
+    });
+
+    test('a word inside a double-quoted default is not read as an attribute', () => {
+        const text = [
+            '{# @prop :tone:text #}',
+            '{# @prop hint:text #}',
+            '<c-vars hint="pick a tone first" :tone="warn">',
+        ].join('\n');
+        assert.deepStrictEqual(checkDynamicPrefixMismatch(makeDoc(text), text).map(d => d.message), []);
+    });
+
+    test('a real prefix mismatch is still reported', () => {
+        const text = [
+            '{# @prop :size:text #}',
+            '<c-vars size="md">',
+        ].join('\n');
+        const diags = checkDynamicPrefixMismatch(makeDoc(text), text);
+        assert.strictEqual(diags.length, 1, 'the genuine mismatch must survive the fix');
+        assert.ok(diags[0].message.includes('size'));
+    });
+
+    test('an enum value inside another default is not checked as that prop', () => {
+        const text = [
+            `{# @prop variant:select['a','b'] #}`,
+            '{# @prop note:text #}',
+            `<c-vars note='set variant to a' variant="a">`,
+        ].join('\n');
+        assert.deepStrictEqual(checkEnumDefaultOutOfRange(makeDoc(text), text).map(d => d.message), []);
+    });
+
+    test('a genuine out-of-range <c-vars> enum value is still reported', () => {
+        const text = [
+            `{# @prop variant:select['a','b'] #}`,
+            '<c-vars variant="zzz">',
+        ].join('\n');
+        const diags = checkEnumDefaultOutOfRange(makeDoc(text), text);
+        assert.strictEqual(diags.length, 1);
+        assert.strictEqual(diags[0].code, DIAG_CODE.ENUM_DEFAULT_OUT_OF_RANGE);
+    });
+
+    test('a single-quoted out-of-range enum value is reported too', () => {
+        const text = [
+            `{# @prop variant:select['a','b'] #}`,
+            `<c-vars variant='zzz'>`,
+        ].join('\n');
+        const diags = checkEnumDefaultOutOfRange(makeDoc(text), text);
+        assert.strictEqual(diags.length, 1, 'single-quoted values must be read, not skipped');
+        // The old pattern captured `'zzz'` through its unquoted branch, so the
+        // message quoted the quotes: "value ''zzz'' is not in options".
+        assert.ok(diags[0].message.includes(`'zzz' is not in options`),
+            `value should be reported without its quotes — got: ${diags[0].message}`);
+    });
+
+    test('the range underlines the value, not the quotes around it', () => {
+        const text = `{# @prop variant:select['a','b'] #}\n<c-vars variant='zzz'>`;
+        const [diag] = checkEnumDefaultOutOfRange(makeDoc(text), text);
+        assert.strictEqual(diag.range.start.character, text.split('\n')[1].indexOf('zzz'));
+    });
+
+    test('a > inside a <c-vars> default does not end the tag early', () => {
+        const text = [
+            `{# @prop variant:select['a','b'] #}`,
+            '{# @prop hint:text #}',
+            '<c-vars hint="a > b" variant="zzz">',
+        ].join('\n');
+        assert.strictEqual(checkEnumDefaultOutOfRange(makeDoc(text), text).length, 1,
+            'variant sits after the > and must still be reached');
+    });
+
+    test('missing-cvars still sees a declaration whose default contains a >', () => {
+        const text = [
+            '{# @prop hint:text #}',
+            '<c-vars hint="a > b">',
+        ].join('\n');
+        assert.deepStrictEqual(checkMissingCVars(makeDoc(text), text).map(d => d.message), [],
+            'the <c-vars> block exists — it must not be reported as missing');
+    });
+});

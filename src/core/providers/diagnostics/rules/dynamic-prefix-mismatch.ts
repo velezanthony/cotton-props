@@ -2,7 +2,8 @@ import * as vscode from 'vscode';
 import { DIAG_CODE } from '../../../constants';
 import { PROP_BLOCK_RE } from '../../../parser';
 import { attachQuickFix } from '../quick-fix-data';
-import { CVARS_TAG_PARITY_RE, HEAD_DYNAMIC_RE } from './_shared';
+import { cvarsAttrRe } from '../../../regex';
+import { findCVarsBody, HEAD_DYNAMIC_RE } from './_shared';
 
 interface PropPrefixInfo {
     cleanName: string;
@@ -45,16 +46,19 @@ export function checkDynamicPrefixMismatch(
     const propPrefixes = collectPropPrefixes(text);
     if (propPrefixes.size === 0) { return diagnostics; }
 
-    const cvarsMatch = CVARS_TAG_PARITY_RE.exec(text);
-    if (!cvarsMatch) { return diagnostics; }
+    const cvars = findCVarsBody(text);
+    if (!cvars) { return diagnostics; }
 
-    const bodyStart = cvarsMatch.index! + cvarsMatch[0].indexOf(cvarsMatch[1]);
-    const body = cvarsMatch[1];
-    const attrRe = /(:?)([A-Za-z_][\w-]*)(?:=(?:"[^"]*"|[^\s"]+))?/g;
+    const { body, bodyOffset: bodyStart } = cvars;
 
-    for (const am of body.matchAll(attrRe)) {
-        const cvarsHasPrefix = am[1] === ':';
-        const cleanName = am[2];
+    // cvarsAttrRe is the canonical <c-vars> reader (single AND double quotes,
+    // unquoted tokens, bare flags). The local pattern this replaces only read a
+    // double-quoted or whitespace-free value, so a single-quoted default with
+    // spaces was walked into and its words became phantom attributes.
+    for (const am of body.matchAll(cvarsAttrRe())) {
+        const rawName = am[1];
+        const cvarsHasPrefix = rawName.startsWith(':');
+        const cleanName = cvarsHasPrefix ? rawName.slice(1) : rawName;
 
         const prop = propPrefixes.get(cleanName);
         if (!prop) { continue; } // missing-from-cvars / undocumented owns this case
@@ -62,7 +66,7 @@ export function checkDynamicPrefixMismatch(
 
         // Range covers `:name` or `name` — the offending span the user has to flip.
         const matchStart = bodyStart + am.index!;
-        const matchEnd = matchStart + am[1].length + am[2].length;
+        const matchEnd = matchStart + rawName.length;
 
         const propSide = prop.isDynamic ? `:${cleanName}` : cleanName;
         const cvarsSide = cvarsHasPrefix ? `:${cleanName}` : cleanName;

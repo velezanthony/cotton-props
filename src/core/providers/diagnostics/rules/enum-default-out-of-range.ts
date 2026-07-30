@@ -2,7 +2,8 @@ import * as vscode from 'vscode';
 import { DIAG_CODE } from '../../../constants';
 import { PROP_BLOCK_RE } from '../../../parser';
 import { attachQuickFix } from '../quick-fix-data';
-import { CVARS_TAG_PARITY_RE, RAW_DEFAULT_RE } from './_shared';
+import { cvarsAttrRe } from '../../../regex';
+import { findCVarsBody, RAW_DEFAULT_RE } from './_shared';
 
 const HEAD_SELECT_OPTIONS_RE = /^\s*(:?[\w-]+):select\[([^\]]*)\]/;
 const OPTION_LITERAL_RE = /'([^']*)'/g;
@@ -89,23 +90,23 @@ export function checkEnumDefaultOutOfRange(
     }
 
     // ── Check <c-vars> values for any attrs that name a select prop ──
-    const cvarsMatch = CVARS_TAG_PARITY_RE.exec(text);
-    if (cvarsMatch) {
-        const bodyStart = cvarsMatch.index! + cvarsMatch[0].indexOf(cvarsMatch[1]);
-        const body = cvarsMatch[1];
-        const attrRe = /(:?)([A-Za-z_][\w-]*)(?:=(?:"([^"]*)"|([^\s"]+)))?/g;
-        for (const am of body.matchAll(attrRe)) {
-            const cleanName = am[2];
+    const cvars = findCVarsBody(text);
+    if (cvars) {
+        const { body, bodyOffset: bodyStart } = cvars;
+        // cvarsAttrRe reads both quote styles; the local pattern this replaces
+        // handled only `"..."` or a whitespace-free token, so `variant='zzz'`
+        // was captured WITH its quotes and reported as the value `'zzz'`.
+        for (const am of body.matchAll(cvarsAttrRe())) {
+            const rawName = am[1];
+            const cleanName = rawName.startsWith(':') ? rawName.slice(1) : rawName;
             const info = selectProps.get(cleanName);
             if (!info) { continue; }
 
-            const quotedValue = am[3];
-            const unquotedValue = am[4];
-            const value = quotedValue ?? unquotedValue;
+            // Groups: [2] "double-quoted", [3] 'single-quoted', [4] unquoted.
+            const value = am[2] ?? am[3] ?? am[4];
             if (value === undefined || value === '' || info.options.includes(value)) { continue; }
 
-            const valueGroupIdx = quotedValue !== undefined ? 3 : 4;
-            const valueOffset = bodyStart + am.index! + am[0].lastIndexOf(am[valueGroupIdx]);
+            const valueOffset = bodyStart + am.index! + am[0].lastIndexOf(value);
             const diag = new vscode.Diagnostic(
                 new vscode.Range(
                     document.positionAt(valueOffset),
