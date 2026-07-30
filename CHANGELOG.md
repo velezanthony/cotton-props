@@ -8,12 +8,19 @@ This project adheres to [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ### Fixed
 
+- **No more phantom props from attribute values.** Attributes are now read by a real scanner (`src/core/tag-scanner.ts`) instead of a regex, which fixes a family of false diagnostics where the contents of an attribute value were tokenized as if they were more attributes:
+  - A `>` inside a value — an arrow function, `a > b`, `{% if a > b %}` — truncated the tag body and threw away the closing quote, so every identifier in an `x-data`-style expression became a prop (`Duplicate prop 'this'`).
+  - Framework prefixes were unrecognised, so `@click="run('{{ a }}', '{{ b }}')"` and `::value="rows['k' + i]"` had their values walked into (`Duplicate prop 'option'`, `Duplicate prop 'p'`).
+  - A Django `{# comment #}` inside a tag body was read as attributes, turning prose into props (`Duplicate prop 'de'`).
+- **A phantom attribute can no longer silence a `Missing required prop` warning.** Only prop-shaped attributes count as "passed", so a stray token that happened to share a required prop's name no longer suppressed its warning — a false negative that hid real errors.
+- **Framework attributes are no longer mistaken for props.** `@click`, `::class`, and `x-on:click.away` are passed through by Cotton and are now excluded from prop checks, from `@strict` unknown-prop warnings, from inlay-hint suppression, and from signature-help parameter tracking.
 - **The component tree filter no longer disappears when you click a component.** The filter is now view state that outlives the input box: closing the box by any means — `Enter`, `Esc`, or clicking the tree — keeps what is on screen. Previously the input box owned the filter and reverted it on any close it did not recognise as an accept, and since VS Code hides an input box on focus loss, clicking a filtered result silently wiped the filter.
 
 ### Changed
 
 - **Clearing the filter is always an explicit act** — the title-bar button, `Escape` with the component tree focused, or emptying the filter box. Nothing clears it behind your back.
 - The filter box coalesces keystrokes (120 ms) so typing a word triggers one tree rebuild instead of one per character.
+- **One canonical attribute reader.** Diagnostics, inlay hints, signature help, the detail-panel highlighter, and prop rename had each grown their own attribute regex, and each leaked differently. They now share `scanTagAttributes()` / `findCottonTags()`, so a parsing fix lands everywhere at once instead of in one provider.
 
 ## [1.0.0] — 2026-06-15
 

@@ -1,13 +1,19 @@
 import * as vscode from 'vscode';
 import { BUILTIN, BUILTIN_TAGS, COTTON_TAG_PREFIX, EXTENSION_NAME, DIAG_CODE } from '../../constants';
-import { cottonTagOpenRe } from '../../regex';
 import { findComponentFile, getCachedProps, isStrict } from '../../scanner';
 import { findIsAttribute, parseIsAttribute } from '../../dynamic-component';
+import { findCottonTags, scanTagAttributes, type CottonTag, type TagAttribute } from '../../tag-scanner';
 import type { PropDefinition } from '../../models';
 import { attachQuickFix } from './quick-fix-data';
 import { nameVariations } from './shared';
 
-const ATTR_RE = /\s(:?)([\w-]+)(?:=(?:"([^"]*)"|'([^']*)'))?/g;
+/** The key an attribute occupies for duplicate detection. Cotton treats `size`
+ *  and `:size` as the same prop, so they collide by design. Framework
+ *  attributes (`@click`, `::class`) live in their own namespace keyed by the
+ *  literal name, so `@click` can never collide with a prop called `click`. */
+function duplicateKey(attr: TagAttribute): string {
+    return attr.kind === 'other' ? attr.raw : attr.name;
+}
 
 function checkComponentNotFound(document: vscode.TextDocument, tag: string, tagIndex: number): vscode.Diagnostic {
     const start = document.positionAt(tagIndex);
@@ -24,14 +30,14 @@ function checkComponentNotFound(document: vscode.TextDocument, tag: string, tagI
 export function checkComponentDispatch(
     document: vscode.TextDocument,
     attrsStr: string,
-    tagMatch: RegExpExecArray,
+    tagIndex: number,
 ): vscode.Diagnostic | undefined {
     const isAttr = findIsAttribute(attrsStr);
     if (!isAttr) {
         // `<c-component>` with no `is` attribute fails at Cotton runtime —
         // the dispatcher has no template name to render. Flag the tag head.
-        const start = document.positionAt(tagMatch.index);
-        const end = document.positionAt(tagMatch.index + (COTTON_TAG_PREFIX + BUILTIN.COMPONENT).length);
+        const start = document.positionAt(tagIndex);
+        const end = document.positionAt(tagIndex + (COTTON_TAG_PREFIX + BUILTIN.COMPONENT).length);
         const diag = new vscode.Diagnostic(
             new vscode.Range(start, end),
             `${EXTENSION_NAME}: <c-component> requires an 'is' (or ':is') attribute`,
@@ -45,7 +51,7 @@ export function checkComponentDispatch(
     if (parsed.kind !== 'literal') { return undefined; }
     if (findComponentFile(parsed.target)) { return undefined; }
 
-    const baseOffset = tagMatch.index + (COTTON_TAG_PREFIX + BUILTIN.COMPONENT).length;
+    const baseOffset = tagIndex + (COTTON_TAG_PREFIX + BUILTIN.COMPONENT).length;
     const valueOffset = baseOffset + isAttr.valueOffset;
     const diag = new vscode.Diagnostic(
         new vscode.Range(
@@ -123,7 +129,7 @@ function checkRequiredProps(
     props: PropDefinition[],
     seenAttrs: Map<string, number>,
     tag: string,
-    tagMatch: RegExpExecArray,
+    cottonTag: CottonTag,
 ): vscode.Diagnostic[] {
     const diagnostics: vscode.Diagnostic[] = [];
 
@@ -132,16 +138,17 @@ function checkRequiredProps(
         const isPassed = nameVariations(prop.cleanName).some(v => seenAttrs.has(v));
         if (isPassed) { continue; }
 
-        const start = document.positionAt(tagMatch.index);
-        const end = document.positionAt(tagMatch.index + `<c-${tag}`.length);
+        const start = document.positionAt(cottonTag.index);
+        const end = document.positionAt(cottonTag.index + `<c-${tag}`.length);
         const diag = new vscode.Diagnostic(
             new vscode.Range(start, end),
             `Missing required prop '${prop.cleanName}' on '${tag}'`,
             vscode.DiagnosticSeverity.Warning,
         );
         diag.code = DIAG_CODE.MISSING_REQUIRED;
-        const tagEnd = tagMatch.index + tagMatch[0].length;
-        const insertOffset = tagMatch[0].endsWith('/>') ? tagEnd - 2 : tagEnd - 1;
+        // Insert right after the last attribute — before a self-closing `/` or
+        // the `>`, whichever this tag ends with.
+        const insertOffset = cottonTag.bodyOffset + cottonTag.body.length;
         attachQuickFix(diag, {
             kind: 'missing-required',
             propName: prop.cleanName,
@@ -158,14 +165,12 @@ function checkRequiredProps(
 export function validateComponentUsage(document: vscode.TextDocument, text: string): vscode.Diagnostic[] {
     const diagnostics: vscode.Diagnostic[] = [];
 
-    const tagRe = cottonTagOpenRe();
-    let tagMatch;
-    while ((tagMatch = tagRe.exec(text)) !== null) {
-        const tag = tagMatch[1];
-        const attrsStr = tagMatch[2] || '';
+    for (const cottonTag of findCottonTags(text)) {
+        const tag = cottonTag.name;
+        const attrsStr = cottonTag.body;
 
         if (tag === BUILTIN.COMPONENT) {
-            const dispatchDiag = checkComponentDispatch(document, attrsStr, tagMatch);
+            const dispatchDiag = checkComponentDispatch(document, attrsStr, cottonTag.index);
             if (dispatchDiag) { diagnostics.push(dispatchDiag); }
             continue;
         }
@@ -174,7 +179,7 @@ export function validateComponentUsage(document: vscode.TextDocument, text: stri
 
         const filePath = findComponentFile(tag);
         if (!filePath) {
-            diagnostics.push(checkComponentNotFound(document, tag, tagMatch.index));
+            diagnostics.push(checkComponentNotFound(document, tag, cottonTag.index));
             continue;
         }
 
@@ -183,23 +188,34 @@ export function validateComponentUsage(document: vscode.TextDocument, text: stri
 
         const knownNames = new Set(props.map(p => p.cleanName));
         const propMap = new Map(props.map(p => [p.cleanName, p]));
+        /** Prop-facing names only — framework attributes must never land here,
+         *  or one of them could satisfy a required prop and silence its
+         *  missing-required warning. */
         const seenAttrs = new Map<string, number>();
+        const seenKeys = new Set<string>();
 
-        for (const attrMatch of attrsStr.matchAll(ATTR_RE)) {
-            const isDynamic = attrMatch[1] === ':';
-            const attrName = attrMatch[2];
-            const attrValue = attrMatch[3] ?? attrMatch[4] ?? '';
-            const baseOffset = tagMatch.index + `<c-${tag}`.length;
-            const nameIdx = baseOffset + attrMatch.index! + attrMatch[0].indexOf(attrName);
+        for (const attr of scanTagAttributes(attrsStr)) {
+            const isDynamic = attr.kind === 'dynamic';
+            const attrName = attr.name;
+            const attrValue = attr.value ?? '';
+            const baseOffset = cottonTag.bodyOffset;
+            const nameIdx = baseOffset + attr.nameOffset;
+            const key = duplicateKey(attr);
 
-            if (seenAttrs.has(attrName)) {
+            if (seenKeys.has(key)) {
                 diagnostics.push(new vscode.Diagnostic(
-                    new vscode.Range(document.positionAt(nameIdx), document.positionAt(nameIdx + attrName.length)),
+                    new vscode.Range(document.positionAt(nameIdx), document.positionAt(nameIdx + attr.raw.length)),
                     `Duplicate prop '${attrName}' on '${tag}'`,
                     vscode.DiagnosticSeverity.Error,
                 ));
                 continue;
             }
+            seenKeys.add(key);
+
+            // `@click`, `::class`, `x-on:click.away` — Cotton passes these
+            // through to `attrs` untouched. They are never declared props, so no
+            // prop-facing check applies and they must stay out of seenAttrs.
+            if (attr.kind === 'other') { continue; }
             seenAttrs.set(attrName, nameIdx);
 
             if (!knownNames.has(attrName)) {
@@ -224,7 +240,7 @@ export function validateComponentUsage(document: vscode.TextDocument, text: stri
             if (isDynamic) { continue; }
             if (attrValue.includes('{{') || attrValue.includes('{%')) { continue; }
 
-            const valueIdx = baseOffset + attrMatch.index! + attrMatch[0].indexOf(attrValue);
+            const valueIdx = baseOffset + attr.valueOffset!;
             const valueRange = new vscode.Range(
                 document.positionAt(valueIdx),
                 document.positionAt(valueIdx + attrValue.length),
@@ -233,7 +249,7 @@ export function validateComponentUsage(document: vscode.TextDocument, text: stri
             if (valueDiag) { diagnostics.push(valueDiag); }
         }
 
-        diagnostics.push(...checkRequiredProps(document, props, seenAttrs, tag, tagMatch));
+        diagnostics.push(...checkRequiredProps(document, props, seenAttrs, tag, cottonTag));
     }
 
     return diagnostics;

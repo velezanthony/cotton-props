@@ -1,9 +1,7 @@
 import * as vscode from 'vscode';
 import { BUILTIN_TAGS } from '../constants';
-import { cottonTagOpenRe } from '../regex';
+import { findCottonTags, scanTagAttributes } from '../tag-scanner';
 import { findComponentFile, getCachedProps } from '../scanner';
-
-const ATTR_RE = /\s(:?)([\w-]+)/g;
 
 export class CottonInlayHintsProvider implements vscode.InlayHintsProvider {
 
@@ -23,17 +21,15 @@ export class CottonInlayHintsProvider implements vscode.InlayHintsProvider {
         const startOffset = document.offsetAt(range.start);
         const endOffset = document.offsetAt(range.end);
 
-        const tagRe = cottonTagOpenRe();
-        tagRe.lastIndex = startOffset;
-        let match;
-        while ((match = tagRe.exec(fullText)) !== null) {
-            if (match.index > endOffset) { break; }
+        for (const cottonTag of findCottonTags(fullText)) {
+            if (cottonTag.index < startOffset) { continue; }
+            if (cottonTag.index > endOffset) { break; }
 
-            const tag = match[1];
+            const tag = cottonTag.name;
             if (BUILTIN_TAGS.includes(tag)) { continue; }
 
-            const attrsStr = match[2];
-            const selfClosing = match[3] === '/';
+            const attrsStr = cottonTag.body;
+            const selfClosing = cottonTag.selfClosing;
 
             const filePath = findComponentFile(tag);
             if (!filePath) { continue; }
@@ -43,7 +39,7 @@ export class CottonInlayHintsProvider implements vscode.InlayHintsProvider {
 
             const passed = collectPassedAttrs(attrsStr);
 
-            const insertOffset = match.index + `<c-${tag}`.length + attrsStr.length;
+            const insertOffset = cottonTag.bodyOffset + attrsStr.length;
             const position = document.positionAt(insertOffset);
 
             for (const prop of props) {
@@ -64,10 +60,14 @@ export class CottonInlayHintsProvider implements vscode.InlayHintsProvider {
     }
 }
 
+/** Which props the author already wrote, so their default hint is suppressed.
+ *  Only prop-shaped attributes count: a framework attribute like `@click` can
+ *  never be the prop `click`, and letting one in would hide a real default. */
 function collectPassedAttrs(attrsStr: string): Set<string> {
     const passed = new Set<string>();
-    for (const m of attrsStr.matchAll(ATTR_RE)) {
-        passed.add(m[2]);
+    for (const attr of scanTagAttributes(attrsStr)) {
+        if (attr.kind === 'other') { continue; }
+        passed.add(attr.name);
     }
     return passed;
 }

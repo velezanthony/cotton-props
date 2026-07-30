@@ -2,6 +2,7 @@ import * as assert from 'assert';
 import * as vscode from 'vscode';
 import { DIAG_CODE } from '../../core/constants';
 import { checkComponentDispatch } from '../../core/providers/diagnostics/usage-checks';
+import { findCottonTags } from '../../core/tag-scanner';
 
 /**
  * The diagnostic tests under `diagnostics.test.ts` run against the test
@@ -21,12 +22,11 @@ function makeDoc(text: string): vscode.TextDocument {
 }
 
 function runOnFirstComponentTag(text: string): vscode.Diagnostic | undefined {
-    // Mirror the regex usage-checks.ts uses to locate <c-component> tags.
-    const re = /<c-(component)((?:\s[^>]*)?)\s*\/?>/g;
-    const m = re.exec(text);
-    if (!m) { throw new Error('Test setup: no <c-component> tag in text'); }
-    const attrsStr = m[2] || '';
-    return checkComponentDispatch(makeDoc(text), attrsStr, m);
+    // Locate the tag through the same scanner usage-checks.ts uses, so this test
+    // can't pass against a tag shape production would never see.
+    const tag = findCottonTags(text).find(t => t.name === 'component');
+    if (!tag) { throw new Error('Test setup: no <c-component> tag in text'); }
+    return checkComponentDispatch(makeDoc(text), tag.body, tag.index);
 }
 
 suite('Diagnostic: <c-component> without is attribute', () => {

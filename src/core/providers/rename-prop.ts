@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { isCottonFile, filePathToTag } from '../scanner';
 import { toSnake, toKebab, nameVariations } from '../naming';
+import { scanTagAttributes } from '../tag-scanner';
 import type { UsageIndex } from '../usage-index';
 
 interface PropAtPosition {
@@ -66,17 +67,20 @@ export class CottonRenameProvider implements vscode.RenameProvider {
             }
         }
 
-        // Check <c-vars> attribute
-        if (/<c-vars\s/.test(line)) {
-            const attrRe = /(:?)([\w_-]+)(?:\s*=)?/g;
-            let m;
-            while ((m = attrRe.exec(line)) !== null) {
-                const isDynamic = m[1] === ':';
-                const rawName = m[2];
-                const nameStart = m.index + m[1].length;
-                const nameEnd = nameStart + rawName.length;
+        // Check <c-vars> attribute. Scanning starts after the tag name so
+        // `c-vars` itself can't resolve as a prop, and goes through the shared
+        // scanner so a word inside a default value can't either.
+        const varsMatch = /<c-vars\b/.exec(line);
+        if (varsMatch) {
+            const bodyStart = varsMatch.index + varsMatch[0].length;
+            for (const attr of scanTagAttributes(line.substring(bodyStart))) {
+                if (attr.kind === 'other') { continue; }
+                const isDynamic = attr.kind === 'dynamic';
+                // The range covers the bare name — the `:` prefix stays put.
+                const nameStart = bodyStart + attr.nameOffset + (isDynamic ? 1 : 0);
+                const nameEnd = nameStart + attr.name.length;
                 if (char >= nameStart && char <= nameEnd) {
-                    return { name: toKebab(rawName), isDynamic, range: new vscode.Range(position.line, nameStart, position.line, nameEnd) };
+                    return { name: toKebab(attr.name), isDynamic, range: new vscode.Range(position.line, nameStart, position.line, nameEnd) };
                 }
             }
         }
