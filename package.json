@@ -177,6 +177,13 @@
         }
       ]
     },
+    "keybindings": [
+      {
+        "command": "cotton.clearFilter",
+        "key": "escape",
+        "when": "focusedView == cottonComponentsTree && cotton.filterActive"
+      }
+    ],
     "snippets": [
       {
         "language": "html",

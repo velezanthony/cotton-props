@@ -6,6 +6,15 @@ This project adheres to [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ## [Unreleased]
 
+### Fixed
+
+- **The component tree filter no longer disappears when you click a component.** The filter is now view state that outlives the input box: closing the box by any means — `Enter`, `Esc`, or clicking the tree — keeps what is on screen. Previously the input box owned the filter and reverted it on any close it did not recognise as an accept, and since VS Code hides an input box on focus loss, clicking a filtered result silently wiped the filter.
+
+### Changed
+
+- **Clearing the filter is always an explicit act** — the title-bar button, `Escape` with the component tree focused, or emptying the filter box. Nothing clears it behind your back.
+- The filter box coalesces keystrokes (120 ms) so typing a word triggers one tree rebuild instead of one per character.
+
 ## [1.0.0] — 2026-06-15
 
 First public release — a complete IntelliSense, validation, and tooling suite for [Django Cotton](https://django-cotton.com/) components in VS Code.
