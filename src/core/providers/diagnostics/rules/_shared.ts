@@ -4,7 +4,12 @@
  * rules lives here.
  */
 
-import { findCottonTags } from '../../../tag-scanner';
+import { findTagEnd } from '../../../tag-scanner';
+
+/** `<c-vars` head. Case-insensitive because `cvarsOpenRe()` in regex.ts is too —
+ *  `parser.ts` accepts `<C-VARS>`, so these rules must see the same declaration
+ *  the parser does, or missing-cvars reports one that demonstrably exists. */
+const CVARS_HEAD_RE = /<c-vars\b/i;
 
 /** The `<c-vars>` declaration's attribute body, used by enum-default,
  *  missing-cvars, and dynamic-prefix for cross-checks against `@prop`.
@@ -14,9 +19,12 @@ import { findCottonTags } from '../../../tag-scanner';
  *  (`<c-vars hint="a > b" variant="zzz">`) lost every attribute after it and the
  *  rules stopped checking them. */
 export function findCVarsBody(text: string): { body: string; bodyOffset: number } | undefined {
-    // Case-insensitive on the name to match the `/i` the previous pattern used.
-    const tag = findCottonTags(text).find(t => t.name.toLowerCase() === 'vars');
-    return tag ? { body: tag.body, bodyOffset: tag.bodyOffset } : undefined;
+    const head = CVARS_HEAD_RE.exec(text);
+    if (!head) { return undefined; }
+    const bodyOffset = head.index + head[0].length;
+    const end = findTagEnd(text, bodyOffset);
+    if (!end) { return undefined; }
+    return { body: text.substring(bodyOffset, end.bodyEnd), bodyOffset };
 }
 
 /** `| default:"..."` or `| default:literal` — captures the value in

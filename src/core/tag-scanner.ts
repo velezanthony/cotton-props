@@ -92,14 +92,21 @@ function isNameStart(ch: string): boolean {
     return ch === '@' || ch === ':' || /[A-Za-z_]/.test(ch);
 }
 
+const NAME_CHAR_RE = /[\w.:-]/;
+
+/** Hoisted rather than a literal inside the function: this runs once per
+ *  character of every tag body, and a fresh regex per call was measurable. */
 function isNameChar(ch: string): boolean {
-    return /[\w.:-]/.test(ch);
+    return NAME_CHAR_RE.test(ch);
 }
 
 /** If `text` opens a Django block at `i`, return the offset just past its
  *  closing delimiter — or `text.length` when it is never closed, so callers
  *  consume the remainder instead of reading prose as attributes. */
 function skipDjangoBlock(text: string, i: number): number | undefined {
+    // Every Django construct opens with `{`. Checking that one character first
+    // avoids three startsWith() calls per scanned character.
+    if (text[i] !== '{') { return undefined; }
     for (const [open, close] of DJANGO_BLOCKS) {
         if (!text.startsWith(open, i)) { continue; }
         const end = text.indexOf(close, i + open.length);
@@ -201,12 +208,24 @@ function stripPrefix(raw: string): string {
     return raw.replace(/^[@:]+/, '');
 }
 
+export interface TagEnd {
+    /** Offset of the closing `>`. */
+    gt: number;
+    /** Offset one past the last body character, excluding a self-closing `/`. */
+    bodyEnd: number;
+    selfClosing: boolean;
+}
+
 /** Walk from just past a tag name to its closing `>`, stepping over quoted
  *  values and Django blocks so a `>` inside either does not end the tag.
  *  Returns `undefined` for a tag that is never closed — a `<` at this level
  *  means the author left it open, and swallowing the rest of the document would
- *  be far worse than skipping one tag. */
-function scanToTagEnd(text: string, from: number): { gt: number; bodyEnd: number; selfClosing: boolean } | undefined {
+ *  be far worse than skipping one tag.
+ *
+ *  Exported so callers that locate a tag head with their own pattern (the
+ *  `<c-vars>` parity rules match case-insensitively) still share this one
+ *  definition of where a tag ends. */
+export function findTagEnd(text: string, from: number): TagEnd | undefined {
     let i = from;
     while (i < text.length) {
         const ch = text[i];
@@ -239,7 +258,12 @@ function scanToTagEnd(text: string, from: number): { gt: number; bodyEnd: number
     return undefined;
 }
 
-const TAG_HEAD_RE = /<c-([\w.-]+)/g;
+/** A factory, not a shared constant: a `/g` regex carries mutable `lastIndex`,
+ *  and one shared instance would let a nested or concurrent scan corrupt
+ *  another's cursor. Same reasoning as the factories in `regex.ts`. */
+function tagHeadRe(): RegExp {
+    return /<c-([\w.-]+)/g;
+}
 
 /**
  * Find every `<c-NAME ...>` opening tag in `text`, quote- and Django-aware.
@@ -251,16 +275,12 @@ const TAG_HEAD_RE = /<c-([\w.-]+)/g;
  */
 export function findCottonTags(text: string): CottonTag[] {
     const tags: CottonTag[] = [];
-    const re = TAG_HEAD_RE;
-    re.lastIndex = 0;
+    const re = tagHeadRe();
 
     let m: RegExpExecArray | null;
     while ((m = re.exec(text)) !== null) {
         const bodyOffset = m.index + m[0].length;
-        // A name must be followed by whitespace or the tag's own punctuation;
-        // otherwise `[\w.-]+` already consumed everything it could and this is
-        // something else entirely.
-        const found = scanToTagEnd(text, bodyOffset);
+        const found = findTagEnd(text, bodyOffset);
         if (!found) { continue; }
 
         tags.push({

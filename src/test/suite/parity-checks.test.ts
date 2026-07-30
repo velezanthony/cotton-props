@@ -596,3 +596,52 @@ suite('Parity: <c-vars> values are never walked into', () => {
             'the <c-vars> block exists — it must not be reported as missing');
     });
 });
+
+// ── Review findings ───────────────────────────────────────────────────────
+//
+// Two defects introduced by moving these rules onto cvarsAttrRe():
+//
+//  1. cvarsAttrRe has no notion of Django blocks, so a `{# comment #}` inside
+//     <c-vars> is still read as attributes — the exact defect class the tag
+//     scanner exists to remove. Choosing cvarsAttrRe to "finish the 3b8d97f
+//     unification" kept the hole open.
+//  2. The pattern it replaced carried `/i`, and parser.ts still accepts
+//     `<C-VARS>` through cvarsOpenRe(). A case-sensitive lookup makes
+//     missing-cvars report a declaration that the parser can see as absent.
+
+suite('Parity: <c-vars> comments and casing', () => {
+
+    test('a prop name inside a Django comment in <c-vars> is not an attribute', () => {
+        const text = [
+            '{# @prop :size:text #}',
+            '{# @prop label:text #}',
+            '<c-vars {# el size va aqui debajo #} label="x" :size="md">',
+        ].join('\n');
+        assert.deepStrictEqual(checkDynamicPrefixMismatch(makeDoc(text), text).map(d => d.message), []);
+    });
+
+    test('an enum option inside a Django comment in <c-vars> is not checked', () => {
+        const text = [
+            `{# @prop variant:select['a','b'] #}`,
+            '{# @prop note:text #}',
+            '<c-vars {# variant puede ser zzz #} note="x" variant="a">',
+        ].join('\n');
+        assert.deepStrictEqual(checkEnumDefaultOutOfRange(makeDoc(text), text).map(d => d.message), []);
+    });
+
+    test('an uppercase <C-VARS> declaration is still found', () => {
+        const text = '{# @prop size:text #}\n<C-VARS size="md">';
+        assert.deepStrictEqual(checkMissingCVars(makeDoc(text), text).map(d => d.message), [],
+            'parser.ts accepts <C-VARS> via cvarsOpenRe /i — this rule must agree');
+    });
+
+    test('a mixed-case <C-vars> declaration is still found', () => {
+        const text = '{# @prop size:text #}\n<C-vars size="md">';
+        assert.deepStrictEqual(checkMissingCVars(makeDoc(text), text).map(d => d.message), []);
+    });
+
+    test('an uppercase declaration is still read for enum checks', () => {
+        const text = `{# @prop variant:select['a','b'] #}\n<C-VARS variant="zzz">`;
+        assert.strictEqual(checkEnumDefaultOutOfRange(makeDoc(text), text).length, 1);
+    });
+});

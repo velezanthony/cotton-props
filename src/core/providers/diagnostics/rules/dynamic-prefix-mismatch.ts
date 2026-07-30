@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { DIAG_CODE } from '../../../constants';
 import { PROP_BLOCK_RE } from '../../../parser';
 import { attachQuickFix } from '../quick-fix-data';
-import { cvarsAttrRe } from '../../../regex';
+import { scanTagAttributes } from '../../../tag-scanner';
 import { findCVarsBody, HEAD_DYNAMIC_RE } from './_shared';
 
 interface PropPrefixInfo {
@@ -51,21 +51,22 @@ export function checkDynamicPrefixMismatch(
 
     const { body, bodyOffset: bodyStart } = cvars;
 
-    // cvarsAttrRe is the canonical <c-vars> reader (single AND double quotes,
-    // unquoted tokens, bare flags). The local pattern this replaces only read a
-    // double-quoted or whitespace-free value, so a single-quoted default with
-    // spaces was walked into and its words became phantom attributes.
-    for (const am of body.matchAll(cvarsAttrRe())) {
-        const rawName = am[1];
-        const cvarsHasPrefix = rawName.startsWith(':');
-        const cleanName = cvarsHasPrefix ? rawName.slice(1) : rawName;
+    // The shared scanner, not cvarsAttrRe: both read a value as one unit, but
+    // only the scanner skips Django blocks, so `<c-vars {# el size va aqui #}>`
+    // no longer turns prose into phantom attributes.
+    for (const attr of scanTagAttributes(body)) {
+        // `@click` / `::class` cannot be Cotton prop declarations.
+        if (attr.kind === 'other') { continue; }
+        const rawName = attr.raw;
+        const cvarsHasPrefix = attr.kind === 'dynamic';
+        const cleanName = attr.name;
 
         const prop = propPrefixes.get(cleanName);
         if (!prop) { continue; } // missing-from-cvars / undocumented owns this case
         if (prop.isDynamic === cvarsHasPrefix) { continue; }
 
         // Range covers `:name` or `name` — the offending span the user has to flip.
-        const matchStart = bodyStart + am.index!;
+        const matchStart = bodyStart + attr.nameOffset;
         const matchEnd = matchStart + rawName.length;
 
         const propSide = prop.isDynamic ? `:${cleanName}` : cleanName;
@@ -82,7 +83,8 @@ export function checkDynamicPrefixMismatch(
         diag.code = DIAG_CODE.DYNAMIC_PREFIX_MISMATCH;
         attachQuickFix(diag, {
             kind: 'toggle-dynamic-prefix',
-            nameStart: matchStart + am[1].length, // offset of the name itself, after any `:`
+            // Offset of the name itself, past the `:` when there is one.
+            nameStart: matchStart + (cvarsHasPrefix ? 1 : 0),
             hasPrefix: cvarsHasPrefix,
         });
         diagnostics.push(diag);
