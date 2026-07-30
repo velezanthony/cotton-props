@@ -62,11 +62,13 @@ export function checkDuplicateProps(
         const defaultValue = hasDefault ? (defaultMatch![1] ?? defaultMatch![2] ?? '') : '';
 
         if (seenDefs.has(propName)) {
-            diagnostics.push(new vscode.Diagnostic(
+            const dup = new vscode.Diagnostic(
                 new vscode.Range(document.positionAt(nameIdx), document.positionAt(nameIdx + propName.length)),
                 `Duplicate @prop definition '${propName}'`,
                 vscode.DiagnosticSeverity.Error,
-            ));
+            );
+            dup.code = DIAG_CODE.DUPLICATE_PROP;
+            diagnostics.push(dup);
         } else {
             seenDefs.set(propName, { index: nameIdx, hasDefault, defaultValue, isDynamic });
         }
@@ -159,11 +161,15 @@ export function checkDefaultConsistency(
         }
 
         if (!propInfo.hasDefault && cVarsValue !== null) {
-            diagnostics.push(new vscode.Diagnostic(
+            const undocumentedDefault = new vscode.Diagnostic(
                 new vscode.Range(document.positionAt(attrIdx), document.positionAt(attrIdx + cVarsName.length)),
                 `'${cVarsName}' has default '${cVarsValue}' in <c-vars> but @prop doesn't document a default`,
                 vscode.DiagnosticSeverity.Information,
-            ));
+            );
+            // Same family as the other two: `@prop` and `<c-vars>` disagree about
+            // a default. This is the mirror of the case just above.
+            undocumentedDefault.code = DIAG_CODE.SYNC_DEFAULT;
+            diagnostics.push(undocumentedDefault);
         }
 
         if (propInfo.hasDefault && cVarsValue !== null && propInfo.defaultValue !== cVarsValue) {
@@ -261,11 +267,13 @@ export function checkUnusedProps(
         if (isUsed) { continue; }
 
         const varIdx = cVarsFullStart + cvars.match[0].indexOf(varName, match.index!);
-        diagnostics.push(new vscode.Diagnostic(
+        const unused = new vscode.Diagnostic(
             new vscode.Range(document.positionAt(varIdx), document.positionAt(varIdx + varName.length)),
             `'${varName}' is defined in <c-vars> but never used in the template`,
             vscode.DiagnosticSeverity.Warning,
-        ));
+        );
+        unused.code = DIAG_CODE.UNUSED_PROP;
+        diagnostics.push(unused);
     }
 
     return diagnostics;
