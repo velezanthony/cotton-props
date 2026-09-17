@@ -2,7 +2,8 @@ import * as vscode from 'vscode';
 import { DIAG_CODE } from '../../../constants';
 import { PROP_BLOCK_RE } from '../../../parser';
 import { attachQuickFix } from '../quick-fix-data';
-import { CVARS_TAG_PARITY_RE, RAW_DEFAULT_RE } from './_shared';
+import { scanTagAttributes } from '../../../tag-scanner';
+import { findCVarsBody, RAW_DEFAULT_RE } from './_shared';
 
 const HEAD_SELECT_OPTIONS_RE = /^\s*(:?[\w-]+):select\[([^\]]*)\]/;
 const OPTION_LITERAL_RE = /'([^']*)'/g;
@@ -89,29 +90,28 @@ export function checkEnumDefaultOutOfRange(
     }
 
     // ── Check <c-vars> values for any attrs that name a select prop ──
-    const cvarsMatch = CVARS_TAG_PARITY_RE.exec(text);
-    if (cvarsMatch) {
-        const bodyStart = cvarsMatch.index! + cvarsMatch[0].indexOf(cvarsMatch[1]);
-        const body = cvarsMatch[1];
-        const attrRe = /(:?)([A-Za-z_][\w-]*)(?:=(?:"([^"]*)"|([^\s"]+)))?/g;
-        for (const am of body.matchAll(attrRe)) {
-            const cleanName = am[2];
-            const info = selectProps.get(cleanName);
+    const cvars = findCVarsBody(text);
+    if (cvars) {
+        const { body, bodyOffset: bodyStart } = cvars;
+        // The shared scanner reads both quote styles and skips Django blocks. The
+        // local pattern this replaces handled only `"..."` or a whitespace-free
+        // token, so `variant='zzz'` was captured WITH its quotes and reported as
+        // the value `'zzz'`, and a comment inside the tag became attributes.
+        for (const attr of scanTagAttributes(body)) {
+            if (attr.kind === 'other') { continue; }
+            const info = selectProps.get(attr.name);
             if (!info) { continue; }
 
-            const quotedValue = am[3];
-            const unquotedValue = am[4];
-            const value = quotedValue ?? unquotedValue;
+            const value = attr.value;
             if (value === undefined || value === '' || info.options.includes(value)) { continue; }
 
-            const valueGroupIdx = quotedValue !== undefined ? 3 : 4;
-            const valueOffset = bodyStart + am.index! + am[0].lastIndexOf(am[valueGroupIdx]);
+            const valueOffset = bodyStart + attr.valueOffset!;
             const diag = new vscode.Diagnostic(
                 new vscode.Range(
                     document.positionAt(valueOffset),
                     document.positionAt(valueOffset + value.length),
                 ),
-                `'${cleanName}': <c-vars> value '${value}' is not in options [${info.options.join(', ')}].`,
+                `'${attr.name}': <c-vars> value '${value}' is not in options [${info.options.join(', ')}].`,
                 vscode.DiagnosticSeverity.Error,
             );
             diag.code = DIAG_CODE.ENUM_DEFAULT_OUT_OF_RANGE;

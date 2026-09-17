@@ -1,6 +1,9 @@
 /**
- * Canonical Cotton tag regexes — every provider that needs to scan templates
- * for `<c-...>` patterns goes through one of these factories.
+ * Narrow Cotton regexes, each with one specific job (semantic-token
+ * highlighting, the `<c-component>` dispatch scan, the `<c-vars>` reader).
+ * The canonical reader for a `<c-...>` tag and its attributes is
+ * `tag-scanner.ts` (`findCottonTags`/`scanTagAttributes`) — reach for that
+ * whenever a scan has to survive a `>` or a quote inside an attribute value.
  *
  * Why factories instead of shared constants: regexes with the `/g` flag
  * carry mutable `lastIndex` state. If two providers shared the same
@@ -8,9 +11,11 @@
  * cursor. Factories hand out a fresh instance per call, so the state stays
  * local to the caller.
  *
- * The patterns themselves match every shape Cotton accepts — multi-line
- * tag declarations included, since `[^>]` and `[\s\S]` both cross newlines
- * in JavaScript.
+ * These patterns cross newlines (`[^>]` and `[\s\S]` both match `\n` in
+ * JavaScript), so multi-line tag declarations are fine. What a `[^>]` body
+ * cannot survive is a `>` inside an attribute value: the tag ends there and
+ * every attribute after it is lost. When the value contents matter, use
+ * `findTagEnd()`/`findCottonTags()` in `tag-scanner.ts`.
  */
 
 /**
@@ -37,8 +42,10 @@ export function cottonTagOpenRe(): RegExp {
  * Capture groups:
  *   [1] — attribute string (multi-line capable, `` if no attrs)
  *
- * Used by the dispatch-aware providers (hover, definition, references,
- * usage-index) to find every dispatch site in a document.
+ * Used by `findIsAttributes()` in `is-context.ts`, the shared helper behind the
+ * hover and definition dispatch lookups. Two other dispatch-aware call sites
+ * bypass it: `references.ts` builds a tag-specific `is="..."` pattern, and
+ * `usage-index.ts` reads dispatch sites off `findCottonTags()`.
  */
 export function cottonComponentTagOpenRe(): RegExp {
     return /<c-component\b([\s\S]*?)>/g;
@@ -67,8 +74,13 @@ export function cvarsOpenRe(): RegExp {
 }
 
 /**
- * The one canonical reader for a `<c-vars>` attribute — parser, diagnostics
- * and quick-fixes all share it so they can't drift apart.
+ * The `<c-vars>` attribute reader used by `parser.ts` and by
+ * `diagnostics/component-file-checks.ts` (whose quick-fix payloads come off
+ * that same pass). NOT the only reader any more: the parity rules in
+ * `diagnostics/rules/` read the same declaration with `scanTagAttributes()`
+ * because only the scanner skips Django blocks — see `rules/_shared.ts`.
+ * Keep the two in step, or a rule and the parser will disagree about what
+ * the declaration says.
  *
  * Supersets django-cotton's runtime (`tag_parser.py`, the real source of
  * truth — not the gallery's double-quote-only `_ATTR`): single OR double

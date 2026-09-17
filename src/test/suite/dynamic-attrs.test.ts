@@ -62,4 +62,36 @@ suite('findDynamicAttrValues', () => {
         const text = '<c-atoms.button :size="md" />\n<c-atoms.badge :tone="ok" />';
         assert.deepStrictEqual(values(text), ['md', 'ok']);
     });
+
+    // A `>` inside an earlier value used to truncate the tag body, so every
+    // dynamic attribute after it lost its decoration.
+    test('a > in an earlier value does not hide later dynamic attrs', () => {
+        const text = '<c-atoms.button state="{ ok() { return n > 0 } }" :size="md" />';
+        assert.deepStrictEqual(values(text), ['md']);
+    });
+
+    test('an arrow function in an earlier value does not hide later dynamic attrs', () => {
+        const text = '<c-atoms.card onDone="() => close()" :tone="theme" />';
+        assert.deepStrictEqual(values(text), ['theme']);
+    });
+
+    // The value pattern was `[^"']*`, so a value holding the opposite quote
+    // character matched nothing and the attribute was skipped entirely.
+    test('a double-quoted value may contain an apostrophe', () => {
+        assert.deepStrictEqual(values(`<c-atoms.button :label="it's here" />`), ["it's here"]);
+    });
+
+    test('a single-quoted value may contain a double quote', () => {
+        assert.deepStrictEqual(values(`<c-atoms.button :config='{"k": 1}' />`), ['{"k": 1}']);
+    });
+
+    // Alpine's `::` shorthand and `@` events are framework attributes, not
+    // Cotton dynamic props — they must not be tinted as expressions.
+    test('framework attributes are not treated as dynamic props', () => {
+        assert.deepStrictEqual(values(`<c-atoms.button ::class="c" @click="go()" :size="md" />`), ['md']);
+    });
+
+    test('a Django comment inside the tag yields no dynamic values', () => {
+        assert.deepStrictEqual(values('<c-atoms.button {# :size no va aqui #} :tone="ok" />'), ['ok']);
+    });
 });

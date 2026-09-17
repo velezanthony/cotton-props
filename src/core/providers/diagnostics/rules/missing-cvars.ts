@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { DIAG_CODE } from '../../../constants';
 import { PROP_BLOCK_RE } from '../../../parser';
 import { attachQuickFix } from '../quick-fix-data';
-import { CVARS_TAG_PARITY_RE } from './_shared';
+import { findCVarsBody } from './_shared';
 
 /**
  * Phase 2.5 — `missing-cvars`.
@@ -26,7 +26,7 @@ export function checkMissingCVars(
     const propMatches = [...text.matchAll(PROP_BLOCK_RE)];
     if (propMatches.length === 0) { return []; }
 
-    if (CVARS_TAG_PARITY_RE.test(text)) { return []; }
+    if (findCVarsBody(text) !== undefined) { return []; }
 
     const firstPropMatch = propMatches[0];
     const lastPropMatch = propMatches[propMatches.length - 1];

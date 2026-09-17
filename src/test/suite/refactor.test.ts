@@ -37,6 +37,32 @@ suite('refactor: findOpeningTagAt', () => {
         const open = findOpeningTagAt(text, text.indexOf('content'));
         assert.strictEqual(open, undefined);
     });
+
+    // The head used to be located with a `[^>]*?` body, so a `>` inside an
+    // attribute value ended it early: headEnd landed mid-value and the cursor
+    // past that point resolved to no tag, silently withholding the refactor.
+    test('a > inside an attribute value does not cut the head short', () => {
+        const text = '<c-atoms.button state="{ ok() { return n > 0 } }" variant="primary">x</c-atoms.button>';
+        const open = findOpeningTagAt(text, text.indexOf('variant'));
+        assert.ok(open, 'cursor after the > should still be inside the head');
+        assert.strictEqual(open!.tag, 'atoms.button');
+        assert.ok(open!.attrs.includes('variant="primary"'), 'attrs lost the trailing attribute');
+    });
+
+    test('an arrow function in a value does not cut the head short', () => {
+        const text = '<c-component is="atoms.button" onDone="() => close()" variant="ghost" />';
+        const open = findOpeningTagAt(text, text.indexOf('variant'));
+        assert.ok(open);
+        assert.strictEqual(open!.tag, 'component');
+        assert.strictEqual(open!.selfClose, true);
+    });
+
+    test('headEnd covers the whole head so the cursor at the last attr resolves', () => {
+        const text = '<c-atoms.card hint="{% if a > b %}x{% endif %}" tone="warn">y</c-atoms.card>';
+        const open = findOpeningTagAt(text, text.indexOf('tone'));
+        assert.ok(open);
+        assert.strictEqual(text[open!.headEnd - 1], '>');
+    });
 });
 
 suite('refactor: findClosingTag (depth-aware)', () => {
@@ -106,6 +132,25 @@ suite('refactor: stripIsAttribute', () => {
             stripIsAttribute(" is='atoms.button' class='x'"),
             " class='x'",
         );
+    });
+
+    // `[^"']*` matched nothing when the value held the opposite quote, so the
+    // attribute survived the strip and the refactor produced a broken tag.
+    test('strips a value containing the opposite quote character', () => {
+        assert.strictEqual(
+            stripIsAttribute(` is="it's" class="x"`),
+            ' class="x"',
+        );
+    });
+
+    test('does not strip a framework attribute whose name ends in is', () => {
+        const attrs = ' x-on:is="go()" class="x"';
+        assert.strictEqual(stripIsAttribute(attrs), attrs);
+    });
+
+    test('leaves an is= that appears inside another value alone', () => {
+        const attrs = ' title="this is=\'not an attr\'" is="atoms.button"';
+        assert.strictEqual(stripIsAttribute(attrs), ' title="this is=\'not an attr\'"');
     });
 
     test('leaves the string untouched when there is no is= attribute', () => {

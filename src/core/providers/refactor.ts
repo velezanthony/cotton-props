@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { BUILTIN } from '../constants';
 import { findIsAttribute, parseIsAttribute } from '../dynamic-component';
-import { cottonTagOpenRe } from '../regex';
+import { findCottonTags, scanTagAttributes } from '../tag-scanner';
 
 /**
  * Refactor actions for switching a tag between its direct form and the
@@ -50,20 +50,23 @@ interface OpenTagMatch {
 }
 
 /** Find the `<c-NAME ...>` opening tag whose head contains `offset`.
- *  Returns the first match if multiple overlap (cursor at outer tag). */
+ *  Returns the first match if multiple overlap (cursor at outer tag).
+ *
+ *  Uses the shared scanner rather than a `[^>]*?` regex body: a `>` inside an
+ *  attribute value (an arrow function, `n > 0`, `{% if a > b %}`) used to end
+ *  the head early, so `headEnd` landed mid-value and a cursor past that point
+ *  resolved to no tag — silently withholding the refactor. */
 export function findOpeningTagAt(text: string, offset: number): OpenTagMatch | undefined {
-    const re = cottonTagOpenRe();
-    let m;
-    while ((m = re.exec(text)) !== null) {
+    for (const tag of findCottonTags(text)) {
         // Half-open interval: [headStart, headEnd). A cursor sitting on the
         // first character of the body (right after `>`) is NOT inside the tag.
-        if (offset < m.index || offset >= m.index + m[0].length) { continue; }
+        if (offset < tag.index || offset >= tag.end) { continue; }
         return {
-            tag: m[1],
-            attrs: m[2] ?? '',
-            headStart: m.index,
-            headEnd: m.index + m[0].length,
-            selfClose: m[3] === '/',
+            tag: tag.name,
+            attrs: tag.body,
+            headStart: tag.index,
+            headEnd: tag.end,
+            selfClose: tag.selfClosing,
         };
     }
     return undefined;
@@ -176,7 +179,23 @@ function convertDispatchToDirectAction(
 }
 
 /** Remove the first `is="..."` / `:is="..."` attribute from an attribute
- *  string, including its leading whitespace. Preserves the rest verbatim. */
+ *  string, including its leading whitespace. Preserves the rest verbatim.
+ *
+ *  Located with the shared scanner so a value holding the opposite quote
+ *  character (`is="it's"`) is still found — the previous `[^"']*` pattern
+ *  matched nothing there and left the attribute in place. */
 export function stripIsAttribute(attrs: string): string {
-    return attrs.replace(/\s(:?)is=(["'])[^"']*\2/, '');
+    for (const attr of scanTagAttributes(attrs)) {
+        if (attr.name !== 'is' || attr.kind === 'other') { continue; }
+        if (attr.value === undefined) { continue; }
+        // Exactly one leading whitespace character, matching the `\s` the
+        // previous pattern consumed — separators between the remaining
+        // attributes must survive untouched.
+        let start = attr.nameOffset;
+        if (start > 0 && /\s/.test(attrs[start - 1])) { start--; }
+        const quoteLen = attr.quote ? 1 : 0;
+        const end = Math.min(attrs.length, attr.valueOffset! + attr.value.length + quoteLen);
+        return attrs.substring(0, start) + attrs.substring(end);
+    }
+    return attrs;
 }

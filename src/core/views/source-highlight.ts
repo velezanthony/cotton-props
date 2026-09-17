@@ -11,6 +11,8 @@
  * gives us the precision we need without a megabyte of grammar tables.
  */
 
+import { scanTagAttributes } from '../tag-scanner';
+
 type Token =
     | { kind: 'comment'; text: string }      // {# ... #}, with cotton @annotations
     | { kind: 'django-tag'; text: string }   // {% ... %}
@@ -110,25 +112,32 @@ function renderHtmlTag(text: string): string {
     );
 }
 
-const ATTR_RE = /(\s+)(:?[\w-]+)(=)?("[^"]*"|'[^']*')?/g;
-
+/** Colour attribute names and values inside a tag head. Anything the scanner
+ *  does not claim as an attribute — whitespace, Django comments, stray
+ *  punctuation — is emitted verbatim, so the preview never loses a character. */
 function renderAttrs(attrs: string): string {
     let out = '';
     let cursor = 0;
-    for (const m of attrs.matchAll(ATTR_RE)) {
-        if (m.index! > cursor) {
-            out += escapeHtml(attrs.substring(cursor, m.index!));
+    for (const attr of scanTagAttributes(attrs)) {
+        if (attr.nameOffset > cursor) {
+            out += escapeHtml(attrs.substring(cursor, attr.nameOffset));
         }
-        const [, ws, name, eq, value] = m;
-        out += escapeHtml(ws);
-        out += `<span class="tok-attr">${escapeHtml(name)}</span>`;
-        if (eq) {
-            out += `<span class="tok-punct">${escapeHtml(eq)}</span>`;
+        out += `<span class="tok-attr">${escapeHtml(attr.raw)}</span>`;
+        cursor = attr.nameOffset + attr.raw.length;
+
+        if (attr.value === undefined) { continue; }
+
+        // The opening quote (when there is one) belongs to the string span; the
+        // `=` and any whitespace around it are punctuation.
+        const quoteLen = attr.quote ? 1 : 0;
+        const stringStart = attr.valueOffset! - quoteLen;
+        if (stringStart > cursor) {
+            out += `<span class="tok-punct">${escapeHtml(attrs.substring(cursor, stringStart))}</span>`;
         }
-        if (value) {
-            out += `<span class="tok-string">${escapeHtml(value)}</span>`;
-        }
-        cursor = m.index! + m[0].length;
+        // Clamped because an unterminated value has no closing quote to include.
+        const stringEnd = Math.min(attrs.length, attr.valueOffset! + attr.value.length + quoteLen);
+        out += `<span class="tok-string">${escapeHtml(attrs.substring(stringStart, stringEnd))}</span>`;
+        cursor = stringEnd;
     }
     if (cursor < attrs.length) {
         out += escapeHtml(attrs.substring(cursor));

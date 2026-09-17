@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { BUILTIN_TAGS } from '../constants';
 import { findComponentFile, getCachedProps } from '../scanner';
+import { scanTagAttributes } from '../tag-scanner';
 import type { PropDefinition } from '../models';
 
 export class CottonSignatureHelpProvider implements vscode.SignatureHelpProvider {
@@ -100,12 +101,13 @@ function formatProp(prop: PropDefinition): string {
 }
 
 function computeActiveParameter(attrsBeforeCursor: string, props: PropDefinition[]): number {
-    const attrRe = /\s*(:?)([\w-]+)(?:\s*=\s*(?:"[^"]*"|'[^']*'|\w+))?/g;
     const passed = new Set<string>();
-    let match;
     let lastAttrName: string | undefined;
-    while ((match = attrRe.exec(attrsBeforeCursor)) !== null) {
-        lastAttrName = match[2];
+    for (const attr of scanTagAttributes(attrsBeforeCursor)) {
+        // Framework attributes are not parameters of the component signature, so
+        // they neither advance the active parameter nor count as passed.
+        if (attr.kind === 'other') { continue; }
+        lastAttrName = attr.name;
         passed.add(lastAttrName);
     }
 

@@ -470,30 +470,241 @@ suite('Parity: missing-description severity setting', () => {
 
     suiteTeardown(async () => { await setSeverity(undefined); });
 
-    test('"warning" promotes the diagnostic from Hint to Warning', async () => {
+    // Each of these writes a real workspace setting and waits for VS Code to
+    // propagate it, which on a loaded machine runs past mocha's 2s default —
+    // this suite was the one flaky spot in an otherwise deterministic run. The
+    // 5s budget matches what the other host-driven suites already use.
+    const SETTING_PROPAGATION_MS = 5000;
+
+    test('"warning" promotes the diagnostic from Hint to Warning', async function () {
+        this.timeout(SETTING_PROPAGATION_MS);
         await setSeverity('warning');
         const diags = checkMissingDescription(makeDoc(text), text);
         assert.strictEqual(diags.length, 1);
         assert.strictEqual(diags[0].severity, vscode.DiagnosticSeverity.Warning);
     });
 
-    test('"off" disables the diagnostic entirely', async () => {
+    test('"off" disables the diagnostic entirely', async function () {
+        this.timeout(SETTING_PROPAGATION_MS);
         await setSeverity('off');
         const diags = checkMissingDescription(makeDoc(text), text);
         assert.strictEqual(diags.length, 0);
     });
 
-    test('"hint" (default) keeps Hint severity', async () => {
+    test('"hint" (default) keeps Hint severity', async function () {
+        this.timeout(SETTING_PROPAGATION_MS);
         await setSeverity('hint');
         const diags = checkMissingDescription(makeDoc(text), text);
         assert.strictEqual(diags.length, 1);
         assert.strictEqual(diags[0].severity, vscode.DiagnosticSeverity.Hint);
     });
 
-    test('unrecognised values fall back to Hint', async () => {
+    test('unrecognised values fall back to Hint', async function () {
+        this.timeout(SETTING_PROPAGATION_MS);
         await setSeverity('error'); // not in the enum — defensive default
         const diags = checkMissingDescription(makeDoc(text), text);
         assert.strictEqual(diags.length, 1);
         assert.strictEqual(diags[0].severity, vscode.DiagnosticSeverity.Hint);
+    });
+});
+
+// ── <c-vars> reading parity ───────────────────────────────────────────────
+//
+// Commit 3b8d97f unified <c-vars> attribute reading onto cvarsAttrRe(), but
+// enum-default-out-of-range and dynamic-prefix-mismatch kept their own local
+// patterns. Those read a value only when it was double-quoted or contained no
+// whitespace, so a single-quoted default WITH spaces was walked into and the
+// words inside it became phantom attributes. A phantom only surfaced when it
+// happened to name another declared prop — which is exactly when it lies.
+
+suite('Parity: <c-vars> values are never walked into', () => {
+
+    test('a word inside a single-quoted default is not read as an attribute', () => {
+        const text = [
+            '{# @prop :size:text #}',
+            '{# @prop label:text #}',
+            `<c-vars label='choose size here' :size="md">`,
+        ].join('\n');
+        const diags = checkDynamicPrefixMismatch(makeDoc(text), text);
+        assert.deepStrictEqual(diags.map(d => d.message), [],
+            'the `size` inside the label default is not a <c-vars> attribute');
+    });
+
+    test('a word inside a double-quoted default is not read as an attribute', () => {
+        const text = [
+            '{# @prop :tone:text #}',
+            '{# @prop hint:text #}',
+            '<c-vars hint="pick a tone first" :tone="warn">',
+        ].join('\n');
+        assert.deepStrictEqual(checkDynamicPrefixMismatch(makeDoc(text), text).map(d => d.message), []);
+    });
+
+    test('a real prefix mismatch is still reported', () => {
+        const text = [
+            '{# @prop :size:text #}',
+            '<c-vars size="md">',
+        ].join('\n');
+        const diags = checkDynamicPrefixMismatch(makeDoc(text), text);
+        assert.strictEqual(diags.length, 1, 'the genuine mismatch must survive the fix');
+        assert.ok(diags[0].message.includes('size'));
+    });
+
+    test('an enum value inside another default is not checked as that prop', () => {
+        const text = [
+            `{# @prop variant:select['a','b'] #}`,
+            '{# @prop note:text #}',
+            `<c-vars note='set variant to a' variant="a">`,
+        ].join('\n');
+        assert.deepStrictEqual(checkEnumDefaultOutOfRange(makeDoc(text), text).map(d => d.message), []);
+    });
+
+    test('a genuine out-of-range <c-vars> enum value is still reported', () => {
+        const text = [
+            `{# @prop variant:select['a','b'] #}`,
+            '<c-vars variant="zzz">',
+        ].join('\n');
+        const diags = checkEnumDefaultOutOfRange(makeDoc(text), text);
+        assert.strictEqual(diags.length, 1);
+        assert.strictEqual(diags[0].code, DIAG_CODE.ENUM_DEFAULT_OUT_OF_RANGE);
+    });
+
+    test('a single-quoted out-of-range enum value is reported too', () => {
+        const text = [
+            `{# @prop variant:select['a','b'] #}`,
+            `<c-vars variant='zzz'>`,
+        ].join('\n');
+        const diags = checkEnumDefaultOutOfRange(makeDoc(text), text);
+        assert.strictEqual(diags.length, 1, 'single-quoted values must be read, not skipped');
+        // The old pattern captured `'zzz'` through its unquoted branch, so the
+        // message quoted the quotes: "value ''zzz'' is not in options".
+        assert.ok(diags[0].message.includes(`'zzz' is not in options`),
+            `value should be reported without its quotes — got: ${diags[0].message}`);
+    });
+
+    test('the range underlines the value, not the quotes around it', () => {
+        const text = `{# @prop variant:select['a','b'] #}\n<c-vars variant='zzz'>`;
+        const [diag] = checkEnumDefaultOutOfRange(makeDoc(text), text);
+        assert.strictEqual(diag.range.start.character, text.split('\n')[1].indexOf('zzz'));
+    });
+
+    test('a > inside a <c-vars> default does not end the tag early', () => {
+        const text = [
+            `{# @prop variant:select['a','b'] #}`,
+            '{# @prop hint:text #}',
+            '<c-vars hint="a > b" variant="zzz">',
+        ].join('\n');
+        assert.strictEqual(checkEnumDefaultOutOfRange(makeDoc(text), text).length, 1,
+            'variant sits after the > and must still be reached');
+    });
+
+    test('missing-cvars still sees a declaration whose default contains a >', () => {
+        const text = [
+            '{# @prop hint:text #}',
+            '<c-vars hint="a > b">',
+        ].join('\n');
+        assert.deepStrictEqual(checkMissingCVars(makeDoc(text), text).map(d => d.message), [],
+            'the <c-vars> block exists — it must not be reported as missing');
+    });
+});
+
+// ── Review findings ───────────────────────────────────────────────────────
+//
+// Two defects introduced by moving these rules onto cvarsAttrRe():
+//
+//  1. cvarsAttrRe has no notion of Django blocks, so a `{# comment #}` inside
+//     <c-vars> is still read as attributes — the exact defect class the tag
+//     scanner exists to remove. Choosing cvarsAttrRe to "finish the 3b8d97f
+//     unification" kept the hole open.
+//  2. The pattern it replaced carried `/i`, and parser.ts still accepts
+//     `<C-VARS>` through cvarsOpenRe(). A case-sensitive lookup makes
+//     missing-cvars report a declaration that the parser can see as absent.
+
+suite('Parity: <c-vars> comments and casing', () => {
+
+    test('a prop name inside a Django comment in <c-vars> is not an attribute', () => {
+        const text = [
+            '{# @prop :size:text #}',
+            '{# @prop label:text #}',
+            '<c-vars {# el size va aqui debajo #} label="x" :size="md">',
+        ].join('\n');
+        assert.deepStrictEqual(checkDynamicPrefixMismatch(makeDoc(text), text).map(d => d.message), []);
+    });
+
+    test('an enum option inside a Django comment in <c-vars> is not checked', () => {
+        const text = [
+            `{# @prop variant:select['a','b'] #}`,
+            '{# @prop note:text #}',
+            '<c-vars {# variant puede ser zzz #} note="x" variant="a">',
+        ].join('\n');
+        assert.deepStrictEqual(checkEnumDefaultOutOfRange(makeDoc(text), text).map(d => d.message), []);
+    });
+
+    test('an uppercase <C-VARS> declaration is still found', () => {
+        const text = '{# @prop size:text #}\n<C-VARS size="md">';
+        assert.deepStrictEqual(checkMissingCVars(makeDoc(text), text).map(d => d.message), [],
+            'parser.ts accepts <C-VARS> via cvarsOpenRe /i — this rule must agree');
+    });
+
+    test('a mixed-case <C-vars> declaration is still found', () => {
+        const text = '{# @prop size:text #}\n<C-vars size="md">';
+        assert.deepStrictEqual(checkMissingCVars(makeDoc(text), text).map(d => d.message), []);
+    });
+
+    test('an uppercase declaration is still read for enum checks', () => {
+        const text = `{# @prop variant:select['a','b'] #}\n<C-VARS variant="zzz">`;
+        assert.strictEqual(checkEnumDefaultOutOfRange(makeDoc(text), text).length, 1);
+    });
+});
+
+// ── A commented <c-vars> must not shadow the real declaration ─────────────
+//
+// parser.ts and component-file-checks.ts blank comments before locating
+// <c-vars>; these rules did not, so an example inside a comment was taken for
+// the declaration and every check against the real one was silently skipped.
+
+suite('Parity: a commented <c-vars> does not shadow the real one', () => {
+
+    test('the real declaration is checked, not the one in a Django comment', () => {
+        const text = [
+            `{# @prop variant:select['a','b'] #}`,
+            `{# ejemplo de uso: <c-vars variant="a"> #}`,
+            `<c-vars variant="zzz">`,
+        ].join('\n');
+        const diags = checkEnumDefaultOutOfRange(makeDoc(text), text);
+        assert.strictEqual(diags.length, 1, 'the commented example hid the real declaration');
+        assert.ok(diags[0].message.includes('zzz'));
+    });
+
+    test('an example inside an @prop annotation does not shadow it either', () => {
+        const text = [
+            `{# @prop variant:select['a','b'] | description:"asi: <c-vars variant='a'>" #}`,
+            `<c-vars variant="zzz">`,
+        ].join('\n');
+        assert.strictEqual(checkEnumDefaultOutOfRange(makeDoc(text), text).length, 1,
+            'an annotation is a definition, but a <c-vars> inside it is documentation');
+    });
+
+    test('a <c-vars> inside an HTML comment does not shadow the real one', () => {
+        const text = [
+            `{# @prop variant:select['a','b'] #}`,
+            `<!-- <c-vars variant="a"> -->`,
+            `<c-vars variant="zzz">`,
+        ].join('\n');
+        assert.strictEqual(checkEnumDefaultOutOfRange(makeDoc(text), text).length, 1);
+    });
+
+    test('a <c-vars> inside {% comment %} does not shadow the real one', () => {
+        const text = [
+            `{# @prop variant:select['a','b'] #}`,
+            `{% comment %} <c-vars variant="a"> {% endcomment %}`,
+            `<c-vars variant="zzz">`,
+        ].join('\n');
+        assert.strictEqual(checkEnumDefaultOutOfRange(makeDoc(text), text).length, 1);
+    });
+
+    test('missing-cvars is not satisfied by a declaration that only exists in a comment', () => {
+        const text = '{# @prop size:text #}\n{# ejemplo: <c-vars size="md"> #}';
+        assert.strictEqual(checkMissingCVars(makeDoc(text), text).length, 1,
+            'there is no real <c-vars> — only one written inside prose');
     });
 });
