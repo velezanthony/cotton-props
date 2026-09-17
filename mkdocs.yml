@@ -1,0 +1,189 @@
+# https://velezanthony.github.io/django-cotton-props/
+#
+# README.md, CHANGELOG.md and CONTRIBUTING.md stay at the root: the Marketplace
+# reads README from the package root, and GitHub renders both there. Moving them
+# under docs/ to suit MkDocs would break all three.
+
+site_name: Django Cotton Props
+site_description: >-
+  IntelliSense, validation and refactoring for Django Cotton components in VS
+  Code — the rule catalogue, the annotation grammar and the contributor guide.
+site_author: velezanthony
+
+# Mandatory: sitemap.xml derives ABSOLUTE urls from this. Without it the sitemap
+# is still written, and is useless — which looks identical to working.
+site_url: https://velezanthony.github.io/django-cotton-props/
+
+repo_url: https://github.com/velezanthony/django-cotton-props
+repo_name: velezanthony/django-cotton-props
+edit_uri: blob/main/
+
+# Built from the repository root. MkDocs refuses a docs_dir holding its own
+# config file, which is the entire reason the same-dir plugin exists.
+docs_dir: .
+
+plugins:
+  - same-dir
+  - search:
+      lang: [en, es]
+  # English lives in the unsuffixed files — the ones GitHub and the Marketplace
+  # read. Spanish lives in `.es.md` siblings. `fallback_to_default` serves the
+  # English page for anything not translated, so a half-translated site is never
+  # a broken one.
+  - i18n:
+      docs_structure: suffix
+      fallback_to_default: true
+      languages:
+        - locale: en
+          default: true
+          name: English
+          build: true
+        - locale: es
+          name: Español
+          build: true
+          nav_translations:
+            Home: Inicio
+            For users: Para usuarios
+            Getting started: Primeros pasos
+            Reference: Referencia
+            Changelog: Cambios
+            Security: Seguridad
+            For contributors: Para quien contribuye
+            Overview: Visión general
+            Contributing: Cómo contribuir
+            Development: Desarrollo
+            Testing: Tests
+            Architecture: Arquitectura
+            Conventions: Convenciones
+            Release process: Publicar una versión
+            Layer notes: Notas por capa
+
+# Without this, docs_dir: . hands MkDocs every markdown file in node_modules.
+exclude_docs: |
+  .github/
+  .vscode/
+  coverage/
+  dist/
+  images/
+  media/
+  node_modules/
+  # A local mkdocs venv lives here; docs_dir:. would scan the theme's own assets.
+  .venv/
+  out/
+  site/
+  src/
+  # The per-layer notes are contributor documentation; MkDocs honours the
+  # negation even though the parent is excluded, which gitignore would not.
+  !src/core/providers/README.md
+  !src/core/providers/README.es.md
+  !src/core/views/README.md
+  !src/core/views/README.es.md
+  # A full Django app plus its virtualenv — roughly 3,900 files.
+  test-django-cotton/
+  # docs_dir:. treats every non-markdown root file as a static asset, so these
+  # would go live at the root of the published site.
+  esbuild.js
+  eslint.config.mjs
+  Makefile
+  package.json
+  package-lock.json
+  snippets.json
+  tsconfig.json
+  icon.png
+  icon.svg
+  mkdocs.yml
+  LICENSE
+  .venv/
+  vsc-extension-quickstart.md
+  # docs_dir:. reads the WORKING TREE, so a local gh-deploy would publish
+  # whatever notes are sitting there.
+  *.local.md
+  CLAUDE.md
+  PLAN.md
+
+# Defaults are INFO, which --strict never sees. Links to excluded files stay
+# capped at INFO regardless, so docs.yml greps the build log for them.
+validation:
+  omitted_files: warn
+  absolute_links: warn
+  unrecognized_links: warn
+  anchors: warn
+
+nav:
+  - Home: README.md
+  - For users:
+      - Getting started: docs/users/getting-started.md
+      - Reference: docs/REFERENCE.md
+      - Changelog: CHANGELOG.md
+      - Security: SECURITY.md
+  - For contributors:
+      - Overview: docs/contributors/index.md
+      - Contributing: CONTRIBUTING.md
+      - Development: docs/contributors/development.md
+      - Testing: docs/contributors/testing.md
+      - Architecture: docs/ARCHITECTURE.md
+      - Conventions: docs/contributors/conventions.md
+      - Release process: docs/contributors/release.md
+      - Layer notes:
+          - providers: src/core/providers/README.md
+          - views: src/core/views/README.md
+
+theme:
+  name: material
+  language: en
+  icon:
+    repo: fontawesome/brands/github
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - navigation.tracking
+    - toc.follow
+    - search.suggest
+    - content.code.copy
+    - content.action.edit
+  palette:
+    # Follows the reader's setting, same as the extension's own webviews.
+    - media: '(prefers-color-scheme)'
+      toggle:
+        icon: material/brightness-auto
+        name: Follow the system theme
+    - media: '(prefers-color-scheme: light)'
+      scheme: default
+      primary: teal
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark
+    - media: '(prefers-color-scheme: dark)'
+      scheme: slate
+      primary: teal
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light
+
+markdown_extensions:
+  # The documents are written for GitHub; these keep them rendering the same.
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  # GitHub's slug algorithm. These documents render in both places and their
+  # cross-links use GitHub's anchors; any heading with punctuation diverges
+  # under the default slugifier, breaking every in-page link.
+  - toc:
+      permalink: true
+      slugify: !!python/object/apply:pymdownx.slugs.slugify { kwds: { case: lower } }
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/velezanthony
+      name: velezanthony on GitHub
