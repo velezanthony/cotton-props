@@ -32,6 +32,10 @@ import { wrapWithComponent, extractComponent, findExtractablePatterns } from './
 import { UsageIndex } from './core/usage-index';
 
 const DIAGNOSTIC_DEBOUNCE_MS = 300;
+/** Coalesce keystrokes in the filter box: each apply is a full tree rebuild
+ *  (trie + item cache thrown away), so typing `button` would otherwise trigger
+ *  six of them. Short enough that the tree still feels live. */
+const FILTER_DEBOUNCE_MS = 120;
 
 export function activate(context: vscode.ExtensionContext) {
     const selector: vscode.DocumentSelector = [...SUPPORTED_LANGUAGES];
@@ -52,9 +56,19 @@ export function activate(context: vscode.ExtensionContext) {
         dragAndDropController: treeProvider,
     });
 
+    // ── Tag filter ──
+    // The filter is VIEW state, not input-box state: `treeProvider` owns it and
+    // the input box is only a temporary editor for it. That ownership is the
+    // whole point — an input box that dies (Esc, focus loss, a click on the
+    // tree) must never take the filter with it.
+    let filterDebounce: ReturnType<typeof setTimeout> | undefined;
+
     // Reflect the active filter in the view header and drive the title-bar
     // button toggle (search icon when off, clear icon when a filter is set).
+    // Always cancels a pending debounced apply, so an explicit clear can't be
+    // undone a moment later by a keystroke that was still in flight.
     function applyFilter(text: string): void {
+        if (filterDebounce) { clearTimeout(filterDebounce); filterDebounce = undefined; }
         treeProvider.setFilter(text);
         const active = treeProvider.filter !== '';
         treeView.description = active ? `Filter: ${treeProvider.filter}` : undefined;
@@ -64,6 +78,17 @@ export function activate(context: vscode.ExtensionContext) {
         treeView.message = empty ? `No components match "${treeProvider.filter}"` : undefined;
         void vscode.commands.executeCommand('setContext', CONTEXT_KEYS.FILTER_ACTIVE, active);
     }
+
+    /** Keystroke path into applyFilter. */
+    function applyFilterDebounced(text: string): void {
+        if (filterDebounce) { clearTimeout(filterDebounce); }
+        filterDebounce = setTimeout(() => { filterDebounce = undefined; applyFilter(text); }, FILTER_DEBOUNCE_MS);
+    }
+
+    // A timer that survives deactivate would call into a disposed tree view.
+    context.subscriptions.push({
+        dispose: () => { if (filterDebounce) { clearTimeout(filterDebounce); filterDebounce = undefined; } },
+    });
 
     // Per-component badges (errors / warnings / hints / unused) on the tree.
     const treeDecorations = new CottonTreeDecorationProvider(usageIndex);
@@ -115,17 +140,17 @@ export function activate(context: vscode.ExtensionContext) {
             const input = vscode.window.createInputBox();
             input.title = 'Filter Cotton components';
             input.placeholder = 'e.g. button, atoms.card — the tree narrows as you type';
+            // Seeded from the view, so reopening edits the live filter rather
+            // than starting over — and emptying it here is one way to clear.
             input.value = treeProvider.filter;
-            const original = treeProvider.filter;
-            let accepted = false;
-            input.onDidChangeValue(value => applyFilter(value));
-            input.onDidAccept(() => { accepted = true; input.hide(); });
-            input.onDidHide(() => {
-                // Esc (hide without accept) reverts to the pre-open filter; the
-                // live edits were provisional. Enter keeps what's on screen.
-                if (!accepted) { applyFilter(original); }
-                input.dispose();
-            });
+            input.onDidChangeValue(value => applyFilterDebounced(value));
+            input.onDidAccept(() => input.hide());
+            // Every way out — Enter, Esc, a click on the tree — commits what is
+            // already on screen. There is deliberately no revert: the filter
+            // applies live, so nothing is ever provisional, and onDidHide cannot
+            // tell Esc from focus loss anyway. Clearing is always an explicit
+            // act: the title-bar button, Escape on the tree, or emptying this box.
+            input.onDidHide(() => input.dispose());
             input.show();
         }),
         vscode.commands.registerCommand(COMMANDS.CLEAR_FILTER, () => applyFilter('')),

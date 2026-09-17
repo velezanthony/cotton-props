@@ -1,0 +1,98 @@
+# Publishes https://velezanthony.github.io/cotton-props/
+#
+# The whole Python toolchain lives in this file so contributors need no second
+# one; nothing in package.json references it.
+#
+# The `paths:` filter is a second list of what the site publishes. It drifting
+# out of sync with mkdocs.yml is silent in the worst way — the workflow does not
+# fail, it does not run — so docs-workflow.test.ts pins the two together.
+name: Docs
+
+on:
+  push:
+    branches: [main, development]
+    paths:
+      - 'docs/**'
+      - '*.md'
+      - '**.es.md'
+      - 'src/**/README.md'
+      - 'mkdocs.yml'
+      - '.github/workflows/docs.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+
+jobs:
+  build:
+    name: Build site
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      # OUTSIDE the checkout, and that matters. mkdocs-static-i18n decides a
+      # file is the user's by testing whether it sits under docs_dir, which
+      # `same-dir` makes the repository root — so a venv in the root puts the
+      # theme's own assets inside that test and the build dies copying them.
+      - name: Set up Python
+        run: uv venv --python 3.12 "$RUNNER_TEMP/docs-venv"
+
+      # same-dir is what makes `docs_dir: .` legal.
+      - name: Install the docs toolchain
+        run: >-
+          uv pip install --python "$RUNNER_TEMP/docs-venv/bin/python"
+          'mkdocs>=1.6,<2'
+          'mkdocs-material>=9.5,<10'
+          'pymdown-extensions>=10,<11'
+          'mkdocs-same-dir>=0.1.3,<0.2'
+          'mkdocs-static-i18n>=1.3,<2'
+
+      # --strict misses links to excluded files, hence the second step.
+      - name: Build site
+        # mkdocs.yml reads this through !ENV and falls back to "".
+        env:
+          PUBLIC_GTM_ID: ${{ secrets.PUBLIC_GTM_ID }}
+        run: |
+          set -o pipefail
+          "$RUNNER_TEMP/docs-venv/bin/mkdocs" build --strict 2>&1 | tee build.log
+
+      - name: Fail on links to excluded files
+        run: |
+          if grep -F 'which is excluded from the built site' build.log; then
+            echo "::error::A published page links to a file excluded by exclude_docs — it will 404. Link to github.com instead."
+            exit 1
+          fi
+
+      # development validates only; a Pages failure there would read as broken docs.
+      - name: Configure Pages
+        if: github.ref == 'refs/heads/main'
+        uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        if: github.ref == 'refs/heads/main'
+        with:
+          path: site/
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

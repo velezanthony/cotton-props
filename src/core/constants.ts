@@ -1,4 +1,9 @@
-export const EXTENSION_NAME = 'Django Cotton Props';
+export const EXTENSION_NAME = 'Cotton Props';
+
+/** Fills the Problems panel's Source column and lets users filter diagnostics
+ *  by producer. Short and id-like, matching how other extensions identify
+ *  themselves there (`tailwindcss`, `eslint`). */
+export const DIAGNOSTIC_SOURCE = 'cotton-props';
 
 /** The literal prefix used on every Cotton tag (`<c-NAME>`). Keep this
  *  centralised — `.length` calculations in providers should derive from
@@ -70,25 +75,34 @@ export const COTTON_TAG_RE = /c-([\w.-]+)/g;
 
 // ── Diagnostic codes (shared between diagnostics.ts and quick-fix.ts) ──
 
+// Values are the second half of what the Problems panel renders as
+// `source(code)` — `cotton-props(duplicate-usage-prop)`. They carry no
+// `cotton-` prefix because the source already says so; repeating it made the
+// cell read `cotton-props(cotton-duplicate-usage-prop)`. Every comparison
+// in TypeScript goes through DIAG_CODE itself, but these values are not private:
+// README's "Diagnostic rules" section documents each one verbatim and tells
+// users to filter the Problems panel by it. Renaming one means a README edit and
+// a broken filter for anyone who saved it.
 export const DIAG_CODE = {
-    DUPLICATE_PROP: 'cotton-duplicate-prop',
-    MISSING_FROM_CVARS: 'cotton-missing-from-cvars',
-    SYNC_DEFAULT: 'cotton-sync-default',
-    UNDOCUMENTED_PROP: 'cotton-undocumented-prop',
-    UNUSED_PROP: 'cotton-unused-prop',
-    COMPONENT_NOT_FOUND: 'cotton-component-not-found',
-    UNKNOWN_PROP: 'cotton-unknown-prop',
-    DUPLICATE_USAGE_PROP: 'cotton-duplicate-usage-prop',
-    DEPRECATED_PROP: 'cotton-deprecated-prop',
-    INVALID_VALUE: 'cotton-invalid-value',
-    MISSING_REQUIRED: 'cotton-missing-required',
-    REQUIRED_WITH_DEFAULT_CONFLICT: 'cotton-required-with-default-conflict',
-    TYPE_DEFAULT_MISMATCH: 'cotton-type-default-mismatch',
-    ENUM_DEFAULT_OUT_OF_RANGE: 'cotton-enum-default-out-of-range',
-    DYNAMIC_PREFIX_MISMATCH: 'cotton-dynamic-prefix-mismatch',
-    MISSING_CVARS_TAG: 'cotton-missing-cvars-tag',
-    MISSING_PROP_DESCRIPTION: 'cotton-missing-prop-description',
-    MISSING_IS_ATTRIBUTE: 'cotton-missing-is-attribute',
+    DUPLICATE_PROP: 'duplicate-prop',
+    MISSING_FROM_CVARS: 'missing-from-cvars',
+    SYNC_DEFAULT: 'sync-default',
+    UNDOCUMENTED_PROP: 'undocumented-prop',
+    UNUSED_PROP: 'unused-prop',
+    COMPONENT_NOT_FOUND: 'component-not-found',
+    INVALID_TAG_NAME: 'invalid-tag-name',
+    UNKNOWN_PROP: 'unknown-prop',
+    DUPLICATE_USAGE_PROP: 'duplicate-usage-prop',
+    DEPRECATED_PROP: 'deprecated-prop',
+    INVALID_VALUE: 'invalid-value',
+    MISSING_REQUIRED: 'missing-required',
+    REQUIRED_WITH_DEFAULT_CONFLICT: 'required-with-default-conflict',
+    TYPE_DEFAULT_MISMATCH: 'type-default-mismatch',
+    ENUM_DEFAULT_OUT_OF_RANGE: 'enum-default-out-of-range',
+    DYNAMIC_PREFIX_MISMATCH: 'dynamic-prefix-mismatch',
+    MISSING_CVARS_TAG: 'missing-cvars-tag',
+    MISSING_PROP_DESCRIPTION: 'missing-prop-description',
+    MISSING_IS_ATTRIBUTE: 'missing-is-attribute',
 } as const;
 
 export const BUILTIN_COMPLETIONS: { tag: string; snippet: string; doc: string }[] = [

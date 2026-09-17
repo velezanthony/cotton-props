@@ -3,6 +3,7 @@ import { COTTON_TAG_RE } from '../constants';
 import { findComponentFile, getCachedComponent, getCachedProps } from '../scanner';
 import { formatPropSummary, formatPropDocs } from '../formatting';
 import { findTagContext } from '../helpers';
+import { findCottonTags, scanTagAttributes } from '../tag-scanner';
 import { findIsAttributes } from './is-context';
 import type { ParsedComponent } from '../models';
 
@@ -49,7 +50,35 @@ export function buildTagHoverMarkdown(tag: string, parsed: ParsedComponent): vsc
     return md;
 }
 
-const ATTR_RE = /\s:?([\w-]+)(?:=["'][^"']*["'])?/g;
+/**
+ * The prop name at `offset`, or `undefined` when the offset is not sitting on a
+ * prop name inside a Cotton tag head.
+ *
+ * Replaces a line-scoped `/\s:?([\w-]+)(?:=["'][^"']*["'])?/g` sweep that had
+ * two defects: its value group was optional, so an identifier *inside* an
+ * attribute value resolved as a prop name (hovering `title` inside
+ * `x-data="{ title: 1 }"` offered the `title` prop's docs), and working line by
+ * line meant a multi-line tag declaration was never matched at all.
+ *
+ * Pure, so the offset arithmetic is unit-tested without a workspace.
+ */
+export function findPropNameAt(text: string, offset: number): string | undefined {
+    for (const tag of findCottonTags(text)) {
+        const bodyEnd = tag.bodyOffset + tag.body.length;
+        if (offset < tag.bodyOffset || offset > bodyEnd) { continue; }
+
+        for (const attr of scanTagAttributes(tag.body)) {
+            // `@click` / `::class` are passed through by Cotton and are never
+            // declared props, so there is nothing to hover.
+            if (attr.kind === 'other') { continue; }
+            // The hoverable span is the bare name; the `:` prefix is not part of it.
+            const start = tag.bodyOffset + attr.nameOffset + (attr.kind === 'dynamic' ? 1 : 0);
+            const end = start + attr.name.length;
+            if (offset >= start && offset <= end) { return attr.name; }
+        }
+    }
+    return undefined;
+}
 
 export class HoverProvider implements vscode.HoverProvider {
     provideHover(document: vscode.TextDocument, position: vscode.Position): vscode.Hover | undefined {
@@ -71,15 +100,10 @@ export class HoverProvider implements vscode.HoverProvider {
             return this.hoverTag(ctx.value);
         }
 
-        for (const attrMatch of line.matchAll(ATTR_RE)) {
-            const nameStart = attrMatch.index! + attrMatch[0].indexOf(attrMatch[1]);
-            const nameEnd = nameStart + attrMatch[1].length;
-            if (char >= nameStart && char <= nameEnd) {
-                const docOffset = document.offsetAt(position);
-                const tag = findTagContext(document, docOffset);
-                if (!tag) { continue; }
-                return this.hoverProp(tag, attrMatch[1]);
-            }
+        const propName = findPropNameAt(document.getText(), offset);
+        if (propName !== undefined) {
+            const tag = findTagContext(document, offset);
+            if (tag) { return this.hoverProp(tag, propName); }
         }
 
         return undefined;

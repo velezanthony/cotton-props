@@ -2,7 +2,8 @@ import * as vscode from 'vscode';
 import { DIAG_CODE } from '../../../constants';
 import { PROP_BLOCK_RE } from '../../../parser';
 import { attachQuickFix } from '../quick-fix-data';
-import { CVARS_TAG_PARITY_RE, HEAD_DYNAMIC_RE } from './_shared';
+import { scanTagAttributes } from '../../../tag-scanner';
+import { findCVarsBody, HEAD_DYNAMIC_RE } from './_shared';
 
 interface PropPrefixInfo {
     cleanName: string;
@@ -45,24 +46,28 @@ export function checkDynamicPrefixMismatch(
     const propPrefixes = collectPropPrefixes(text);
     if (propPrefixes.size === 0) { return diagnostics; }
 
-    const cvarsMatch = CVARS_TAG_PARITY_RE.exec(text);
-    if (!cvarsMatch) { return diagnostics; }
+    const cvars = findCVarsBody(text);
+    if (!cvars) { return diagnostics; }
 
-    const bodyStart = cvarsMatch.index! + cvarsMatch[0].indexOf(cvarsMatch[1]);
-    const body = cvarsMatch[1];
-    const attrRe = /(:?)([A-Za-z_][\w-]*)(?:=(?:"[^"]*"|[^\s"]+))?/g;
+    const { body, bodyOffset: bodyStart } = cvars;
 
-    for (const am of body.matchAll(attrRe)) {
-        const cvarsHasPrefix = am[1] === ':';
-        const cleanName = am[2];
+    // The shared scanner, not cvarsAttrRe: both read a value as one unit, but
+    // only the scanner skips Django blocks, so `<c-vars {# el size va aqui #}>`
+    // no longer turns prose into phantom attributes.
+    for (const attr of scanTagAttributes(body)) {
+        // `@click` / `::class` cannot be Cotton prop declarations.
+        if (attr.kind === 'other') { continue; }
+        const rawName = attr.raw;
+        const cvarsHasPrefix = attr.kind === 'dynamic';
+        const cleanName = attr.name;
 
         const prop = propPrefixes.get(cleanName);
         if (!prop) { continue; } // missing-from-cvars / undocumented owns this case
         if (prop.isDynamic === cvarsHasPrefix) { continue; }
 
         // Range covers `:name` or `name` — the offending span the user has to flip.
-        const matchStart = bodyStart + am.index!;
-        const matchEnd = matchStart + am[1].length + am[2].length;
+        const matchStart = bodyStart + attr.nameOffset;
+        const matchEnd = matchStart + rawName.length;
 
         const propSide = prop.isDynamic ? `:${cleanName}` : cleanName;
         const cvarsSide = cvarsHasPrefix ? `:${cleanName}` : cleanName;
@@ -78,7 +83,8 @@ export function checkDynamicPrefixMismatch(
         diag.code = DIAG_CODE.DYNAMIC_PREFIX_MISMATCH;
         attachQuickFix(diag, {
             kind: 'toggle-dynamic-prefix',
-            nameStart: matchStart + am[1].length, // offset of the name itself, after any `:`
+            // Offset of the name itself, past the `:` when there is one.
+            nameStart: matchStart + (cvarsHasPrefix ? 1 : 0),
             hasPrefix: cvarsHasPrefix,
         });
         diagnostics.push(diag);

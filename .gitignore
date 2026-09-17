@@ -7,3 +7,8 @@ coverage
 
 # Local planning notes — persisted to engram, not the repo.
 PLAN.md
+
+# mkdocs build output
+site/
+build.log
+.venv/

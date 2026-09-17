@@ -3,7 +3,7 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 import { parseComponent } from '../../core/parser';
-import { buildTagHoverMarkdown } from '../../core/providers/hover';
+import { buildTagHoverMarkdown, findPropNameAt } from '../../core/providers/hover';
 
 // ── Helpers ──
 
@@ -142,5 +142,74 @@ suite('HoverProvider — buildTagHoverMarkdown', () => {
         const md = buildTagHoverMarkdown('atoms.x', parseComponent('{# @description Just a wrapper. #}')).value;
         assert.ok(md.includes('Just a wrapper.'), 'Should render description');
         assert.ok(!md.includes('no props or slots defined'), 'Description alone is enough — no placeholder');
+    });
+});
+
+// ── Prop-name resolution ─────────────────────────────────────────────────
+//
+// findPropNameAt decides whether the cursor is on a prop name. Its predecessor
+// scanned a single line with an optional-value regex, so identifiers inside an
+// attribute value resolved as props and multi-line tags resolved as nothing.
+
+suite('HoverProvider — findPropNameAt', () => {
+
+    /** Resolve at the first occurrence of `needle` in `text`. */
+    function at(text: string, needle: string): string | undefined {
+        return findPropNameAt(text, text.indexOf(needle));
+    }
+
+    test('resolves a plain prop name', () => {
+        assert.strictEqual(at('<c-atoms.button variant="primary">x</c-atoms.button>', 'variant'), 'variant');
+    });
+
+    test('resolves a dynamic prop name without its colon', () => {
+        assert.strictEqual(at('<c-atoms.button :variant="theme" />', 'variant'), 'variant');
+    });
+
+    test('returns nothing for an offset inside a value', () => {
+        assert.strictEqual(at('<c-atoms.button variant="primary" />', 'primary'), undefined);
+    });
+
+    // The defect that motivated this: `title` lives inside a JS expression, not
+    // in attribute position, so it is not the component's `title` prop.
+    test('an identifier inside a JS value is not a prop name', () => {
+        const text = '<c-atoms.button state="{ title: 1, size: 2 }" variant="ghost" />';
+        assert.strictEqual(at(text, 'title'), undefined);
+        assert.strictEqual(at(text, 'size'), undefined);
+    });
+
+    test('a word inside a Django comment is not a prop name', () => {
+        const text = '<c-atoms.button {# el variant va debajo #}\n  tone="warn" />';
+        assert.strictEqual(at(text, 'variant'), undefined);
+        assert.strictEqual(at(text, 'tone'), 'tone');
+    });
+
+    test('a framework attribute is not a prop name', () => {
+        const text = '<c-atoms.button @click="go()" ::class="c" variant="ghost" />';
+        assert.strictEqual(at(text, 'click'), undefined);
+        assert.strictEqual(at(text, 'class'), undefined);
+        assert.strictEqual(at(text, 'variant'), 'variant');
+    });
+
+    // The line-scoped predecessor could not see these at all.
+    test('resolves a prop on a multi-line tag declaration', () => {
+        const text = '<c-atoms.button\n  size="md"\n  variant="primary"\n/>';
+        assert.strictEqual(at(text, 'variant'), 'variant');
+        assert.strictEqual(at(text, 'size'), 'size');
+    });
+
+    test('a > inside an earlier value does not hide later prop names', () => {
+        const text = '<c-atoms.button state="{ ok() { return n > 0 } }" variant="ghost" />';
+        assert.strictEqual(at(text, 'variant'), 'variant');
+    });
+
+    test('returns nothing outside any tag head', () => {
+        const text = '<c-atoms.button variant="x">body text</c-atoms.button>';
+        assert.strictEqual(at(text, 'body'), undefined);
+    });
+
+    test('resolves at the last character of the name', () => {
+        const text = '<c-atoms.button variant="x" />';
+        assert.strictEqual(findPropNameAt(text, text.indexOf('variant') + 'variant'.length), 'variant');
     });
 });

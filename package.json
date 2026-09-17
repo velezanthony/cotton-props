@@ -1,7 +1,7 @@
 {
-  "name": "django-cotton-props",
-  "displayName": "Django Cotton Props",
-  "description": "IntelliSense, validation, and refactoring for Django Cotton — autocomplete, hover docs, 21 diagnostics, quick fixes, and a component explorer.",
+  "name": "cotton-props",
+  "displayName": "Cotton Props",
+  "description": "IntelliSense, validation, and refactoring for Django Cotton — autocomplete, hover docs, 19 diagnostics, quick fixes, and a component explorer.",
   "version": "1.0.0",
   "publisher": "velezanthony",
   "license": "MIT",
@@ -16,28 +16,18 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/velezanthony/django-cotton-props.git"
+    "url": "https://github.com/velezanthony/cotton-props.git"
   },
   "bugs": {
-    "url": "https://github.com/velezanthony/django-cotton-props/issues"
+    "url": "https://github.com/velezanthony/cotton-props/issues"
   },
-  "homepage": "https://github.com/velezanthony/django-cotton-props#readme",
+  "homepage": "https://github.com/velezanthony/cotton-props#readme",
   "sponsor": {
     "url": "https://github.com/sponsors/velezanthony"
   },
   "keywords": [
     "django",
-    "django cotton",
-    "cotton",
-    "components",
-    "templates",
-    "html",
-    "intellisense",
-    "autocomplete",
-    "completion",
-    "linter",
-    "diagnostics",
-    "snippets"
+    "django cotton"
   ],
   "engines": {
     "vscode": "^1.97.0"
@@ -123,15 +113,15 @@
       },
       {
         "command": "cotton.wrapWithComponent",
-        "title": "Django Cotton Props: Wrap with Component"
+        "title": "Cotton Props: Wrap with Component"
       },
       {
         "command": "cotton.extractComponent",
-        "title": "Django Cotton Props: Extract to Component"
+        "title": "Cotton Props: Extract to Component"
       },
       {
         "command": "cotton.findExtractablePatterns",
-        "title": "Django Cotton Props: Find Extractable Patterns"
+        "title": "Cotton Props: Find Extractable Patterns"
       }
     ],
     "menus": {
@@ -177,6 +167,13 @@
         }
       ]
     },
+    "keybindings": [
+      {
+        "command": "cotton.clearFilter",
+        "key": "escape",
+        "when": "focusedView == cottonComponentsTree && cotton.filterActive"
+      }
+    ],
     "snippets": [
       {
         "language": "html",
@@ -188,7 +185,7 @@
       }
     ],
     "configuration": {
-      "title": "Django Cotton Props",
+      "title": "Cotton Props",
       "properties": {
         "djangoCottonProps.templatePaths": {
           "type": "array",
@@ -224,7 +221,7 @@
         "djangoCottonProps.dynamicAttr.showExpressionHint": {
           "type": "boolean",
           "default": true,
-          "description": "Render faded {{ }} braces around dynamic :prop=\"...\" values and tint them as Django variables, signalling that the value is an expression rather than a literal string"
+          "description": "Render faded {{ }} braces around dynamic :prop=\"...\" values, signalling that the value is an expression rather than a literal string. The Django-variable tint on the value comes from semantic highlighting and is not affected by this setting."
         },
         "djangoCottonProps.diagnostics.missingDescription.severity": {
           "type": "string",

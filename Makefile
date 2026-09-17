@@ -1,4 +1,4 @@
-# django-cotton-props — task entrypoint
+# cotton-props — task entrypoint
 #
 # This Makefile is a FACADE: it delegates to the npm scripts in package.json
 # instead of duplicating their logic. Only commands npm doesn't already cover
