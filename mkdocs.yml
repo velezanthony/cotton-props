@@ -70,6 +70,8 @@ exclude_docs: |
   # A local mkdocs venv lives here; docs_dir:. would scan the theme's own assets.
   .venv/
   out/
+  # A theme template, not a document.
+  overrides/
   site/
   src/
   # The per-layer notes are contributor documentation; MkDocs honours the
@@ -130,6 +132,8 @@ nav:
 
 theme:
   name: material
+  # overrides/main.html adds Google Tag Manager, and nothing else.
+  custom_dir: overrides
   language: en
   icon:
     repo: fontawesome/brands/github
@@ -183,6 +187,10 @@ markdown_extensions:
   - pymdownx.snippets
 
 extra:
+  # Empty unless PUBLIC_GTM_ID is set, so forks and local builds carry no
+  # container. Injected by .github/workflows/docs.yml.
+  gtm_id: !ENV [PUBLIC_GTM_ID, '']
+
   social:
     - icon: fontawesome/brands/github
       link: https://github.com/velezanthony

@@ -61,6 +61,9 @@ jobs:
 
       # --strict misses links to excluded files, hence the second step.
       - name: Build site
+        # mkdocs.yml reads this through !ENV and falls back to "".
+        env:
+          PUBLIC_GTM_ID: ${{ secrets.PUBLIC_GTM_ID }}
         run: |
           set -o pipefail
           "$RUNNER_TEMP/docs-venv/bin/mkdocs" build --strict 2>&1 | tee build.log
