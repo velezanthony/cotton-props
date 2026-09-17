@@ -166,24 +166,24 @@ suite('Diagnostics: DIAG_CODE has no dead entries', () => {
         assert.deepStrictEqual(orphans, [], `DIAG_CODE entries never assigned: ${orphans.join(', ')}`);
     });
 
-    // The README documents one section per code, anchored on the code itself
-    // (`#### \`duplicate-prop\`` → `#duplicate-prop`), so a rule can be linked to
-    // directly. Adding a rule without documenting it, or renaming a code and
-    // leaving the section behind, breaks that link silently.
-    test('every DIAG_CODE has a README section, and no section is orphaned', () => {
-        const readme = fs.readFileSync(
-            path.resolve(__dirname, '..', '..', '..', 'README.md'), 'utf-8',
+    // docs/REFERENCE.md documents one section per code, anchored on the code
+    // itself (`#### \`duplicate-prop\`` → `#duplicate-prop`), so a rule can be
+    // linked to directly. Adding a rule without documenting it, or renaming a
+    // code and leaving the section behind, breaks that link silently.
+    test('every DIAG_CODE has a reference section, and no section is orphaned', () => {
+        const reference = fs.readFileSync(
+            path.resolve(__dirname, '..', '..', '..', 'docs', 'REFERENCE.md'), 'utf-8',
         );
-        const documented = [...readme.matchAll(/^#### `([a-z-]+)`$/gm)].map(m => m[1]);
+        const documented = [...reference.matchAll(/^#### `([a-z-]+)`$/gm)].map(m => m[1]);
         const codes = Object.values(DIAG_CODE) as string[];
 
         assert.deepStrictEqual(
             codes.filter(c => !documented.includes(c)), [],
-            'codes with no README section',
+            'codes with no reference section',
         );
         assert.deepStrictEqual(
             documented.filter(d => !codes.includes(d)), [],
-            'README sections for codes that no longer exist',
+            'reference sections for codes that no longer exist',
         );
     });
 
