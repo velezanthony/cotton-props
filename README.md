@@ -1,6 +1,6 @@
 # Django Cotton Props
 
-> **Full IntelliSense, validation, and tooling for [Django Cotton](https://django-cotton.com/) components in VS Code** — autocomplete, hover docs, 21 diagnostic rules, quick fixes, and a component explorer. Stop guessing prop names and catch template mistakes before they hit the runtime.
+> **Full IntelliSense, validation, and tooling for [Django Cotton](https://django-cotton.com/) components in VS Code** — autocomplete, hover docs, 19 diagnostic rules, quick fixes, and a component explorer. Stop guessing prop names and catch template mistakes before they hit the runtime.
 
 ## See it in action
 
@@ -12,7 +12,7 @@
 
 ![Hover docs](https://raw.githubusercontent.com/velezanthony/django-cotton-props/main/images/hover.png)
 
-**Catch mistakes as you type — 21 diagnostic rules**
+**Catch mistakes as you type — 19 diagnostic rules**
 
 ![Diagnostics](https://raw.githubusercontent.com/velezanthony/django-cotton-props/main/images/diagnostics.png)
 
@@ -36,8 +36,8 @@ Everything works in `.html` and `django-html` files, live as you type.
 | 💡 **Hover docs** | description, prop table, slots, and trigger HTML on any tag or prop |
 | 🧭 **Navigation** | Go to Definition (`F12`), Find All References, Outline symbols, Rename Prop (`F2`) |
 | 🔀 **Dynamic dispatch** | understands `<c-component is="...">` in all three forms |
-| 🚦 **Diagnostics** | 21 edit-time rules across component and usage files |
-| 🛠️ **Quick fixes** | one-click document / sync / insert actions for every diagnostic |
+| 🚦 **Diagnostics** | 19 edit-time rules across component and usage files |
+| 🛠️ **Quick fixes** | one-click document / sync / insert actions on the 9 auto-repairable diagnostics |
 | 🔁 **Auto-rename tag** | the closing tag follows the opening tag as you edit, through nesting |
 | 🗂️ **Sidebar explorer** | component tree, detail panel, and drag-and-drop usage blocks |
 | 🎁 **Refactors** | Wrap with Component, Extract to Component, convert direct ↔ dispatch |
@@ -45,7 +45,7 @@ Everything works in `.html` and `django-html` files, live as you type.
 | 📁 **Safe renames** | renaming a component file updates every `<c-tag>` reference project-wide |
 
 <details>
-<summary><strong>🚦 All 21 diagnostic rules</strong> — what gets flagged at edit time</summary>
+<summary><strong>🚦 All 19 diagnostic rules</strong> — what gets flagged at edit time</summary>
 
 **In component files:**
 - Duplicate `@prop` definitions
@@ -69,6 +69,8 @@ Everything works in `.html` and `django-html` files, live as you type.
 - Deprecated prop usage (strikethrough hint)
 - Invalid type value (select, boolean, number)
 - Missing required prop
+- Invalid component name — a tag like `<c-...>` that could never name any component
+- `<c-component>` with no `is` (or `:is`) attribute
 
 > [!NOTE]
 > **Unused components** are flagged in the sidebar (badge `U` on the tree item), not as a file diagnostic — "this component isn't referenced anywhere" is metadata about its place in the system, not a code error. Add `{# @ignore-unused #}` inside the component file to suppress it for library or dynamic-tag components.
@@ -119,9 +121,10 @@ Multi-line declarations work the same way. Renaming a component file rewrites ev
 The activity-bar icon opens the **Cotton Components** panel:
 
 - **Components tree** — collapsible categories with aggregated diagnostic counts: `atoms 59 · 4E 2W 8H · 12 unused`
-- **Per-component badges** — `2E 1W` (errors / warnings) when diagnostics are present, plus a `U` badge for unused components
+- **Per-component badges** — a single count for the highest severity present (capped at `9+`), coloured by that severity; a `U` badge when a component has no diagnostics and is referenced nowhere. The row text spells the full breakdown out: `3 props · 2E 1W 8H · unused`
 - **Detail panel** — click a component for its props table, slots, and syntax-highlighted source
 - **Drag & drop** — drag a component into the editor to insert a full usage block with every prop as a tabstop and defaults pre-filled; `Tab` steps through them
+- **Tag filter** — the title-bar button opens a filter box and the tree narrows as you type, matching a case-insensitive substring against the full dotted tag (so both `atoms` and `button` reach `atoms.button`). The active filter shows as `Filter: …` in the view header and survives closing the box; clear it with the title-bar button, by emptying the box, or with `Escape` while the tree has focus
 - **Copy tag** and in-tree **search** (`Ctrl+F`)
 
 </details>
@@ -226,7 +229,7 @@ The `@prop` annotation documents a prop; `<c-vars>` declares it for Cotton. They
 
 ```html
 {# @prop label:text | description:"Field label" #}
-{# @prop :errors:text | description:"Validation errors" #}
+{# @prop errors:text | description:"Validation errors" #}
 {# @prop required:boolean | default:False | description:"Required indicator" #}
 <c-vars label errors required=False />
 
@@ -296,7 +299,7 @@ These check that a component's `@prop` annotations and its `<c-vars>` declaratio
 
 #### `sync-default`
 
-**Severity:** Information for the two one-sided cases, Warning when both sides disagree · **Quick fix:** yes
+**Severity:** Information for the two one-sided cases, Warning when both sides disagree · **Quick fix:** yes, except for the `<c-vars>`-has-a-default-the-`@prop`-does-not variant, which reports only
 
 Three variants, all meaning "`@prop` and `<c-vars>` disagree about a default":
 
@@ -547,7 +550,7 @@ Deliberate blind spots, so a rule firing there would be a bug:
 | Setting | Default | Description |
 |---------|---------|-------------|
 | `djangoCottonProps.templatePaths` | `["templates/cotton"]` | Path suffixes scanned for component **definitions**, matched at any depth (root + every Django app). Applies live. |
-| `djangoCottonProps.excludePaths` | `["node_modules", "dist", "build", "venv", "__pycache__", "coverage", ".*"]` | Folder segments skipped when scanning for component **usages**. Applies live. |
+| `djangoCottonProps.excludePaths` | `["node_modules", "dist", "build", "venv", "__pycache__", "coverage", ".*"]` | Folders skipped when scanning the workspace — both where components are **defined** (they drop out of the tree, e.g. `templates/cotton/icons`) and where they are **used**. `.*` matches any dot-directory. Applies live. |
 | `djangoCottonProps.inlayHints.showDefaults` | `true` | Show default values as inlay hints for unset props. |
 | `djangoCottonProps.dynamicAttr.showExpressionHint` | `true` | Render faded `{{ }}` braces around dynamic `:prop="…"` values. |
 | `djangoCottonProps.diagnostics.missingDescription.severity` | `"hint"` | Severity for the *missing prop description* diagnostic — `hint`, `warning`, or `off`. |
@@ -560,7 +563,7 @@ Deliberate blind spots, so a rule firing there would be a bug:
   // Where component definitions live — path suffixes, matched at any depth.
   "djangoCottonProps.templatePaths": ["templates/cotton"],
 
-  // Folder segments skipped when scanning for component usages.
+  // Folders skipped when scanning the workspace — both where components are defined (they drop out of the tree) and where they are used.
   "djangoCottonProps.excludePaths": ["node_modules", "dist", "build", "venv", "__pycache__", "coverage", ".*"],
 
   // Show default values as inlay hints for unset props.

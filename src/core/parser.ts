@@ -167,7 +167,8 @@ export function detectsAcceptsAttrs(content: string): boolean {
 }
 
 /**
- * Blank out Django `{# #}` and HTML `<!-- -->` comment bodies so a literal
+ * Blank out Django `{# #}` and `{% comment %}` blocks and HTML `<!-- -->`
+ * comment bodies so a literal
  * `<c-vars>` mention inside one can't shadow the real declaration. Same-length
  * (newlines kept) so offsets and line numbers stay aligned with the source.
  */

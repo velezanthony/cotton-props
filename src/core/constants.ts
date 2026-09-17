@@ -78,9 +78,11 @@ export const COTTON_TAG_RE = /c-([\w.-]+)/g;
 // Values are the second half of what the Problems panel renders as
 // `source(code)` — `django-cotton-props(duplicate-usage-prop)`. They carry no
 // `cotton-` prefix because the source already says so; repeating it made the
-// cell read `django-cotton-props(cotton-duplicate-usage-prop)`. Nothing outside
-// TypeScript references these strings — every comparison goes through DIAG_CODE
-// itself — so they are free to read well.
+// cell read `django-cotton-props(cotton-duplicate-usage-prop)`. Every comparison
+// in TypeScript goes through DIAG_CODE itself, but these values are not private:
+// README's "Diagnostic rules" section documents each one verbatim and tells
+// users to filter the Problems panel by it. Renaming one means a README edit and
+// a broken filter for anyone who saved it.
 export const DIAG_CODE = {
     DUPLICATE_PROP: 'duplicate-prop',
     MISSING_FROM_CVARS: 'missing-from-cvars',

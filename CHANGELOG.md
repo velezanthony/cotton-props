@@ -12,11 +12,6 @@ This project adheres to [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 - **A malformed name is reported as malformed.** `<c-...>` now reads `'...' is not a valid component name` instead of `component '...' not found`, which suggested a missing file.
 - **A `<c-vars>` written inside a comment no longer shadows the real declaration.** An example in a comment was taken for the declaration, so every parity check against the real one was silently skipped. `{% comment %}` blocks are now recognised as comments too, everywhere comments are blanked.
 
-### Changed
-
-- **Diagnostics carry a source and a code.** The Problems panel renders the two together as `django-cotton-props(duplicate-usage-prop)`, so every finding says which extension produced it and which rule fired, and both are filterable. `Duplicate prop` and `Unknown prop` had codes defined but never assigned. Messages no longer repeat the extension's name, since the columns carry it.
-
-### Fixed
 
 - **No more phantom props from attribute values.** Attributes are now read by a real scanner (`src/core/tag-scanner.ts`) instead of a regex, which fixes a family of false diagnostics where the contents of an attribute value were tokenized as if they were more attributes:
   - A `>` inside a value — an arrow function, `a > b`, `{% if a > b %}` — truncated the tag body and threw away the closing quote, so every identifier in an `x-data`-style expression became a prop (`Duplicate prop 'this'`).
@@ -28,12 +23,13 @@ This project adheres to [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
   - **The convert-to-dispatch refactor** located the tag head with a `[^>]*?` body, so a `>` in a value ended it early and the action was silently withheld for a cursor past that point.
   - **Dynamic-attribute decorations** were skipped for every `:prop` after a value containing `>`, and for any value holding the opposite quote character (`:label="it's"`). Alpine's `::class` is no longer tinted as a Cotton expression.
   - **`is=` stripping** left the attribute in place when its value contained the opposite quote character, producing a broken tag.
-  - **The `<c-vars>` parity rules** (`enum-default-out-of-range`, `dynamic-prefix-mismatch`, `missing-cvars`) read only double-quoted or whitespace-free values, so `<c-vars label='choose size here'>` was walked into and its words became phantom attributes — reported whenever one happened to name another declared prop. A single-quoted default was also reported with its quotes included in the message. These now use `cvarsAttrRe()`, completing the unification that 1.0.0's c-vars fix intended but missed in two files.
+  - **The `<c-vars>` parity rules** (`enum-default-out-of-range`, `dynamic-prefix-mismatch`, `missing-cvars`) read only double-quoted or whitespace-free values, so `<c-vars label='choose size here'>` was walked into and its words became phantom attributes — reported whenever one happened to name another declared prop. A single-quoted default was also reported with its quotes included in the message. These now go through the shared scanner (`findCVarsBody()` + `scanTagAttributes()`), which reads both quote styles, keeps reading past a `>` inside a value, and skips a Django `{# comment #}` written inside the tag — finishing the unification that 1.0.0's c-vars fix intended but missed in two files.
 - **Framework attributes are no longer mistaken for props.** `@click`, `::class`, and `x-on:click.away` are passed through by Cotton and are now excluded from prop checks, from `@strict` unknown-prop warnings, from inlay-hint suppression, and from signature-help parameter tracking.
 - **The component tree filter no longer disappears when you click a component.** The filter is now view state that outlives the input box: closing the box by any means — `Enter`, `Esc`, or clicking the tree — keeps what is on screen. Previously the input box owned the filter and reverted it on any close it did not recognise as an accept, and since VS Code hides an input box on focus loss, clicking a filtered result silently wiped the filter.
 
 ### Changed
 
+- **Diagnostics carry a source and a code.** The Problems panel renders the two together as `django-cotton-props(duplicate-usage-prop)`, so every finding says which extension produced it and which rule fired, and both are filterable. `Duplicate prop` and `Unknown prop` had codes defined but never assigned. Messages no longer repeat the extension's name, since the columns carry it.
 - **Clearing the filter is always an explicit act** — the title-bar button, `Escape` with the component tree focused, or emptying the filter box. Nothing clears it behind your back.
 - The filter box coalesces keystrokes (120 ms) so typing a word triggers one tree rebuild instead of one per character.
 - **One canonical attribute reader.** Diagnostics, inlay hints, signature help, the detail-panel highlighter, and prop rename had each grown their own attribute regex, and each leaked differently. They now share `scanTagAttributes()` / `findCottonTags()`, so a parsing fix lands everywhere at once instead of in one provider.

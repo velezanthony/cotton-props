@@ -11,13 +11,13 @@
 
 ## Setup
 
-* install the recommended extensions (amodio.tsl-problem-matcher, ms-vscode.extension-test-runner, and dbaeumer.vscode-eslint)
+* install the recommended extensions (dbaeumer.vscode-eslint, connor4312.esbuild-problem-matchers, and ms-vscode.extension-test-runner)
 
 
 ## Get up and running straight away
 
 * Press `F5` to open a new window with your extension loaded.
-* Run your command from the command palette by pressing (`Ctrl+Shift+P` or `Cmd+Shift+P` on Mac) and typing `Hello World`.
+* Run a command from the command palette by pressing (`Ctrl+Shift+P` or `Cmd+Shift+P` on Mac). The editor refactors are prefixed — type `Django Cotton Props` for `Wrap with Component`, `Extract to Component`, and `Find Extractable Patterns`. The component-tree commands are listed under their bare titles: `Refresh Components`, `Filter Components`, `Clear Filter`, `Open Component`, `Copy Tag`.
 * Set breakpoints in your code inside `src/extension.ts` to debug your extension.
 * Find output from your extension in the debug console.
 
