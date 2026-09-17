@@ -16,7 +16,7 @@ deshabilitados.
 No abras una issue pública.
 
 Usa el reporte privado de GitHub en
-[github.com/velezanthony/django-cotton-props/security/advisories/new](https://github.com/velezanthony/django-cotton-props/security/advisories/new).
+[github.com/velezanthony/cotton-props/security/advisories/new](https://github.com/velezanthony/cotton-props/security/advisories/new).
 
 Incluye la versión, la entrada mínima que lo reproduce y qué observaste.
 Recibirás acuse de recibo en unos días.

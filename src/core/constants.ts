@@ -1,9 +1,9 @@
-export const EXTENSION_NAME = 'Django Cotton Props';
+export const EXTENSION_NAME = 'Cotton Props';
 
 /** Fills the Problems panel's Source column and lets users filter diagnostics
  *  by producer. Short and id-like, matching how other extensions identify
  *  themselves there (`tailwindcss`, `eslint`). */
-export const DIAGNOSTIC_SOURCE = 'django-cotton-props';
+export const DIAGNOSTIC_SOURCE = 'cotton-props';
 
 /** The literal prefix used on every Cotton tag (`<c-NAME>`). Keep this
  *  centralised — `.length` calculations in providers should derive from
@@ -76,9 +76,9 @@ export const COTTON_TAG_RE = /c-([\w.-]+)/g;
 // ── Diagnostic codes (shared between diagnostics.ts and quick-fix.ts) ──
 
 // Values are the second half of what the Problems panel renders as
-// `source(code)` — `django-cotton-props(duplicate-usage-prop)`. They carry no
+// `source(code)` — `cotton-props(duplicate-usage-prop)`. They carry no
 // `cotton-` prefix because the source already says so; repeating it made the
-// cell read `django-cotton-props(cotton-duplicate-usage-prop)`. Every comparison
+// cell read `cotton-props(cotton-duplicate-usage-prop)`. Every comparison
 // in TypeScript goes through DIAG_CODE itself, but these values are not private:
 // README's "Diagnostic rules" section documents each one verbatim and tells
 // users to filter the Problems panel by it. Renaming one means a README edit and

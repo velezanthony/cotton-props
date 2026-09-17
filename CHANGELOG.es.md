@@ -1,6 +1,6 @@
 # Cambios
 
-Aquí se documenta todo lo reseñable de la extensión Django Cotton Props.
+Aquí se documenta todo lo reseñable de la extensión Cotton Props.
 
 Este proyecto sigue [Keep a Changelog](https://keepachangelog.com/es/1.1.0/) y [Versionado Semántico](https://semver.org/lang/es/).
 
@@ -29,7 +29,7 @@ Este proyecto sigue [Keep a Changelog](https://keepachangelog.com/es/1.1.0/) y [
 
 ### Cambiado
 
-- **Los diagnósticos llevan origen y código.** El panel de Problems muestra los dos juntos como `django-cotton-props(duplicate-usage-prop)`, así que cada hallazgo dice qué extensión lo produjo y qué regla disparó, y las dos cosas se pueden filtrar. `Duplicate prop` y `Unknown prop` tenían código definido pero nunca asignado. Los mensajes ya no repiten el nombre de la extensión, porque las columnas ya lo llevan.
+- **Los diagnósticos llevan origen y código.** El panel de Problems muestra los dos juntos como `cotton-props(duplicate-usage-prop)`, así que cada hallazgo dice qué extensión lo produjo y qué regla disparó, y las dos cosas se pueden filtrar. `Duplicate prop` y `Unknown prop` tenían código definido pero nunca asignado. Los mensajes ya no repiten el nombre de la extensión, porque las columnas ya lo llevan.
 - **Limpiar el filtro es siempre un acto explícito** — el botón de la barra de título, `Escape` con el árbol de componentes enfocado, o vaciar la caja. Nada lo limpia a tus espaldas.
 - La caja del filtro agrupa las pulsaciones (120 ms), así que escribir una palabra provoca una reconstrucción del árbol en vez de una por carácter.
 - **Un solo lector canónico de atributos.** Los diagnósticos, los inlay hints, la ayuda de firma, el resaltador del panel de detalle y el renombrado de props se habían criado cada uno su propia regex de atributos, y cada una fugaba de forma distinta. Ahora comparten `scanTagAttributes()` / `findCottonTags()`, así que un arreglo de parseo aterriza en todos a la vez en vez de en un solo provider.

@@ -2,10 +2,10 @@
 
 ## Instalar
 
-Busca **Django Cotton Props** en la vista de extensiones, o:
+Busca **Cotton Props** en la vista de extensiones, o:
 
 ```
-ext install velezanthony.django-cotton-props
+ext install velezanthony.cotton-props
 ```
 
 Necesita VS Code **1.97+** y un proyecto [Django Cotton](https://django-cotton.com/)
@@ -64,10 +64,10 @@ Los hallazgos llevan un origen y un código, que el panel de Problems muestra
 juntos:
 
 ```
-django-cotton-props(sync-default)
+cotton-props(sync-default)
 ```
 
 Escribe el código en la caja de filtro del panel para aislar esa regla, o
-`django-cotton-props` para ver solo lo de esta extensión. Cada código tiene su
+`cotton-props` para ver solo lo de esta extensión. Cada código tiene su
 propia sección en la [referencia](../REFERENCE.es.md#reglas-de-diagnóstico), con
 la entrada mínima que lo dispara.

@@ -15,7 +15,7 @@ highlighter and escapes every value it emits. It runs with scripts disabled.
 Do not open a public issue.
 
 Use GitHub's private reporting at
-[github.com/velezanthony/django-cotton-props/security/advisories/new](https://github.com/velezanthony/django-cotton-props/security/advisories/new).
+[github.com/velezanthony/cotton-props/security/advisories/new](https://github.com/velezanthony/cotton-props/security/advisories/new).
 
 Include the version, the smallest input that reproduces it, and what you
 observed. You will get an acknowledgement within a few days.

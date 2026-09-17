@@ -114,7 +114,7 @@ its own parsing is the smell this codebase has already been bitten by.
 checks that compare `@prop` against `<c-vars>`.
 
 Every diagnostic carries a `source` and a `code` from `DIAG_CODE`, so the
-Problems panel renders `django-cotton-props(duplicate-usage-prop)` and the
+Problems panel renders `cotton-props(duplicate-usage-prop)` and the
 filter box can isolate one rule. Those codes are documented one section each in
 [REFERENCE.md](REFERENCE.md), and a test fails if a code has no section or a
 section names a code that no longer exists.

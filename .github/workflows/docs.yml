@@ -1,4 +1,4 @@
-# Publishes https://velezanthony.github.io/django-cotton-props/
+# Publishes https://velezanthony.github.io/cotton-props/
 #
 # The whole Python toolchain lives in this file so contributors need no second
 # one; nothing in package.json references it.

@@ -2,10 +2,10 @@
 
 ## Install
 
-Search **Django Cotton Props** in the Extensions view, or:
+Search **Cotton Props** in the Extensions view, or:
 
 ```
-ext install velezanthony.django-cotton-props
+ext install velezanthony.cotton-props
 ```
 
 Requires VS Code **1.97+** and a [Django Cotton](https://django-cotton.com/)
@@ -61,10 +61,10 @@ Every filter, every type, and the full `<c-vars>` contract are in the
 Findings carry a source and a code, rendered together in the Problems panel:
 
 ```
-django-cotton-props(sync-default)
+cotton-props(sync-default)
 ```
 
 Type the code into the panel's filter box to isolate that rule, or
-`django-cotton-props` to see only this extension's findings. Each code has its
+`cotton-props` to see only this extension's findings. Each code has its
 own section in the [reference](../REFERENCE.md#diagnostic-rules), with the
 smallest input that triggers it.

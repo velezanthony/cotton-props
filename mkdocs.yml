@@ -1,10 +1,10 @@
-# https://velezanthony.github.io/django-cotton-props/
+# https://velezanthony.github.io/cotton-props/
 #
 # README.md, CHANGELOG.md and CONTRIBUTING.md stay at the root: the Marketplace
 # reads README from the package root, and GitHub renders both there. Moving them
 # under docs/ to suit MkDocs would break all three.
 
-site_name: Django Cotton Props
+site_name: Cotton Props
 site_description: >-
   IntelliSense, validation and refactoring for Django Cotton components in VS
   Code — the rule catalogue, the annotation grammar and the contributor guide.
@@ -12,10 +12,10 @@ site_author: velezanthony
 
 # Mandatory: sitemap.xml derives ABSOLUTE urls from this. Without it the sitemap
 # is still written, and is useless — which looks identical to working.
-site_url: https://velezanthony.github.io/django-cotton-props/
+site_url: https://velezanthony.github.io/cotton-props/
 
-repo_url: https://github.com/velezanthony/django-cotton-props
-repo_name: velezanthony/django-cotton-props
+repo_url: https://github.com/velezanthony/cotton-props
+repo_name: velezanthony/cotton-props
 edit_uri: blob/main/
 
 # Built from the repository root. MkDocs refuses a docs_dir holding its own

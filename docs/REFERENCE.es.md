@@ -1,7 +1,7 @@
 # Referencia
 
 El catálogo completo de reglas, la gramática de anotaciones y los ajustes de
-[Django Cotton Props](https://marketplace.visualstudio.com/items?itemName=velezanthony.django-cotton-props).
+[Cotton Props](https://marketplace.visualstudio.com/items?itemName=velezanthony.cotton-props).
 El README es la visita guiada; esto es lo que buscas cuando te sale un código en
 el panel de Problems.
 
@@ -115,10 +115,10 @@ Usage — `name`, `placeholder`, `type` pass through via `attrs`:
 Cada diagnóstico que reporta la extensión lleva un **origen** y un **código**, que el panel de Problems muestra juntos:
 
 ```
-django-cotton-props(duplicate-usage-prop)
+cotton-props(duplicate-usage-prop)
 ```
 
-Escribe un código en la caja de filtro del panel para aislar una regla, o `django-cotton-props` para ver solo lo de esta extensión.
+Escribe un código en la caja de filtro del panel para aislar una regla, o `cotton-props` para ver solo lo de esta extensión.
 
 Las reglas se reparten según dónde disparan. Las **de definición** corren dentro de la plantilla del propio componente — el fichero bajo `templates/cotton/` que declara las anotaciones `@prop` y el tag `<c-vars>`. Las **de uso** corren allá donde se escriba un componente, en cualquier plantilla.
 

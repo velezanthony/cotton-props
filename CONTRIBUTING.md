@@ -37,7 +37,7 @@ shouldn't" is almost always a shape of input nobody tried, and the input is the
 whole report.
 
 Open an issue at
-[github.com/velezanthony/django-cotton-props/issues](https://github.com/velezanthony/django-cotton-props/issues).
+[github.com/velezanthony/cotton-props/issues](https://github.com/velezanthony/cotton-props/issues).
 
 ## Where things are
 

@@ -115,7 +115,7 @@ cría su propio parseo es el olor que ya ha mordido a este código.
 comprobaciones de parity que comparan `@prop` con `<c-vars>`.
 
 Cada diagnóstico lleva un `source` y un `code` de `DIAG_CODE`, así que el panel
-de Problems muestra `django-cotton-props(duplicate-usage-prop)` y la caja de
+de Problems muestra `cotton-props(duplicate-usage-prop)` y la caja de
 filtro puede aislar una regla. Esos códigos están documentados una sección cada
 uno en [REFERENCE.es.md](REFERENCE.es.md), y un test falla si un código no tiene
 sección o si una sección nombra un código que ya no existe.

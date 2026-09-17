@@ -4,7 +4,7 @@ import * as vscode from 'vscode';
 suite('Extension', () => {
 
     test('extension is present', () => {
-        const ext = vscode.extensions.getExtension('velezanthony.django-cotton-props');
+        const ext = vscode.extensions.getExtension('velezanthony.cotton-props');
         assert.ok(ext, 'Extension should be installed');
     });
 

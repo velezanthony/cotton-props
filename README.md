@@ -1,4 +1,4 @@
-# Django Cotton Props
+# Cotton Props
 
 > **Full IntelliSense, validation, and tooling for [Django Cotton](https://django-cotton.com/) components in VS Code** — autocomplete, hover docs, 19 diagnostic rules, quick fixes, and a component explorer. Stop guessing prop names and catch template mistakes before they hit the runtime.
 
@@ -6,23 +6,23 @@
 
 **Autocomplete every component, navigate, and accept — without leaving the keyboard**
 
-![Autocomplete demo](https://raw.githubusercontent.com/velezanthony/django-cotton-props/main/images/autocomplete.gif)
+![Autocomplete demo](https://raw.githubusercontent.com/velezanthony/cotton-props/main/images/autocomplete.gif)
 
 **Hover any tag for its full prop documentation**
 
-![Hover docs](https://raw.githubusercontent.com/velezanthony/django-cotton-props/main/images/hover.png)
+![Hover docs](https://raw.githubusercontent.com/velezanthony/cotton-props/main/images/hover.png)
 
 **Catch mistakes as you type — 19 diagnostic rules**
 
-![Diagnostics](https://raw.githubusercontent.com/velezanthony/django-cotton-props/main/images/diagnostics.png)
+![Diagnostics](https://raw.githubusercontent.com/velezanthony/cotton-props/main/images/diagnostics.png)
 
 **Select any component to inspect its props, slots, and highlighted source — in the sidebar**
 
-![Component detail panel](https://raw.githubusercontent.com/velezanthony/django-cotton-props/main/images/sidebar.png)
+![Component detail panel](https://raw.githubusercontent.com/velezanthony/cotton-props/main/images/sidebar.png)
 
 ## Getting started
 
-1. **Install** — search **Django Cotton Props** in the Extensions view, or run `ext install velezanthony.django-cotton-props`.
+1. **Install** — search **Cotton Props** in the Extensions view, or run `ext install velezanthony.cotton-props`.
 2. **Requirements** — a [Django Cotton](https://django-cotton.com/) project with component templates, and VS Code **1.97+**. The default `templates/cotton/` layout needs zero configuration.
 3. **Go** — open any `.html` or `django-html` template, type `<c-`, and autocomplete, hover docs, and diagnostics light up instantly.
 
@@ -147,11 +147,11 @@ Colors adapt to your active VS Code theme.
 
 ## Reference
 
-The full catalogue lives in [`docs/REFERENCE.md`](https://github.com/velezanthony/django-cotton-props/blob/main/docs/REFERENCE.md):
+The full catalogue lives in [`docs/REFERENCE.md`](https://github.com/velezanthony/cotton-props/blob/main/docs/REFERENCE.md):
 
-- **[Prop annotation syntax](https://github.com/velezanthony/django-cotton-props/blob/main/docs/REFERENCE.md#prop-annotation-syntax)** — every `@prop` filter, the `<c-vars>` contract, and how the two stay in sync
-- **[Diagnostic rules](https://github.com/velezanthony/django-cotton-props/blob/main/docs/REFERENCE.md#diagnostic-rules)** — one section per code, with the smallest input that triggers it
-- **[Settings](https://github.com/velezanthony/django-cotton-props/blob/main/docs/REFERENCE.md#settings)** — every `djangoCottonProps.*` option
+- **[Prop annotation syntax](https://github.com/velezanthony/cotton-props/blob/main/docs/REFERENCE.md#prop-annotation-syntax)** — every `@prop` filter, the `<c-vars>` contract, and how the two stay in sync
+- **[Diagnostic rules](https://github.com/velezanthony/cotton-props/blob/main/docs/REFERENCE.md#diagnostic-rules)** — one section per code, with the smallest input that triggers it
+- **[Settings](https://github.com/velezanthony/cotton-props/blob/main/docs/REFERENCE.md#settings)** — every `djangoCottonProps.*` option
 
 ## Troubleshooting
 

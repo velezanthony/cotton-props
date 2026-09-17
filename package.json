@@ -1,6 +1,6 @@
 {
-  "name": "django-cotton-props",
-  "displayName": "Django Cotton Props",
+  "name": "cotton-props",
+  "displayName": "Cotton Props",
   "description": "IntelliSense, validation, and refactoring for Django Cotton — autocomplete, hover docs, 19 diagnostics, quick fixes, and a component explorer.",
   "version": "1.0.0",
   "publisher": "velezanthony",
@@ -16,12 +16,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/velezanthony/django-cotton-props.git"
+    "url": "https://github.com/velezanthony/cotton-props.git"
   },
   "bugs": {
-    "url": "https://github.com/velezanthony/django-cotton-props/issues"
+    "url": "https://github.com/velezanthony/cotton-props/issues"
   },
-  "homepage": "https://github.com/velezanthony/django-cotton-props#readme",
+  "homepage": "https://github.com/velezanthony/cotton-props#readme",
   "sponsor": {
     "url": "https://github.com/sponsors/velezanthony"
   },
@@ -113,15 +113,15 @@
       },
       {
         "command": "cotton.wrapWithComponent",
-        "title": "Django Cotton Props: Wrap with Component"
+        "title": "Cotton Props: Wrap with Component"
       },
       {
         "command": "cotton.extractComponent",
-        "title": "Django Cotton Props: Extract to Component"
+        "title": "Cotton Props: Extract to Component"
       },
       {
         "command": "cotton.findExtractablePatterns",
-        "title": "Django Cotton Props: Find Extractable Patterns"
+        "title": "Cotton Props: Find Extractable Patterns"
       }
     ],
     "menus": {
@@ -185,7 +185,7 @@
       }
     ],
     "configuration": {
-      "title": "Django Cotton Props",
+      "title": "Cotton Props",
       "properties": {
         "djangoCottonProps.templatePaths": {
           "type": "array",

@@ -1,7 +1,7 @@
 # Reference
 
 The complete rule catalogue, annotation grammar and settings for
-[Django Cotton Props](https://marketplace.visualstudio.com/items?itemName=velezanthony.django-cotton-props).
+[Cotton Props](https://marketplace.visualstudio.com/items?itemName=velezanthony.cotton-props).
 The README is the tour; this is the thing you search when a code shows up in
 the Problems panel.
 
@@ -115,10 +115,10 @@ Usage — `name`, `placeholder`, `type` pass through via `attrs`:
 Every diagnostic this extension reports carries a **source** and a **code**, which the Problems panel renders together:
 
 ```
-django-cotton-props(duplicate-usage-prop)
+cotton-props(duplicate-usage-prop)
 ```
 
-Type a code into the panel's filter box to isolate one rule, or `django-cotton-props` to see only this extension's findings.
+Type a code into the panel's filter box to isolate one rule, or `cotton-props` to see only this extension's findings.
 
 Rules are split by where they fire. **Definition rules** run inside a component's own template — the file under `templates/cotton/` that declares `@prop` annotations and a `<c-vars>` tag. **Usage rules** run wherever a component is written, in any template.
 

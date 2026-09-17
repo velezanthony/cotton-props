@@ -39,7 +39,7 @@ siempre es una forma de entrada que nadie probó, y esa entrada **es** el report
 entero.
 
 Abre una issue en
-[github.com/velezanthony/django-cotton-props/issues](https://github.com/velezanthony/django-cotton-props/issues).
+[github.com/velezanthony/cotton-props/issues](https://github.com/velezanthony/cotton-props/issues).
 
 ## Dónde está cada cosa
 

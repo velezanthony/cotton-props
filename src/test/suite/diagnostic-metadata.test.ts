@@ -22,7 +22,7 @@ import {
 
 /**
  * Every diagnostic needs a `code`. It is what the Problems panel renders next to
- * the source — `django-cotton-props(duplicate-usage-prop)` — and what lets a
+ * the source — `cotton-props(duplicate-usage-prop)` — and what lets a
  * user filter to one rule.
  *
  * This is a guard, not a formality. Six codes were declared in DIAG_CODE and
@@ -197,7 +197,7 @@ suite('Diagnostics: DIAG_CODE has no dead entries', () => {
         for (const [name, value] of Object.entries(DIAG_CODE)) {
             assert.ok(
                 !value.startsWith('cotton-'),
-                `${name} = '${value}': the source already says django-cotton-props`,
+                `${name} = '${value}': the source already says cotton-props`,
             );
         }
     });

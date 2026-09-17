@@ -17,7 +17,7 @@
 ## Get up and running straight away
 
 * Press `F5` to open a new window with your extension loaded.
-* Run a command from the command palette by pressing (`Ctrl+Shift+P` or `Cmd+Shift+P` on Mac). The editor refactors are prefixed — type `Django Cotton Props` for `Wrap with Component`, `Extract to Component`, and `Find Extractable Patterns`. The component-tree commands are listed under their bare titles: `Refresh Components`, `Filter Components`, `Clear Filter`, `Open Component`, `Copy Tag`.
+* Run a command from the command palette by pressing (`Ctrl+Shift+P` or `Cmd+Shift+P` on Mac). The editor refactors are prefixed — type `Cotton Props` for `Wrap with Component`, `Extract to Component`, and `Find Extractable Patterns`. The component-tree commands are listed under their bare titles: `Refresh Components`, `Filter Components`, `Clear Filter`, `Open Component`, `Copy Tag`.
 * Set breakpoints in your code inside `src/extension.ts` to debug your extension.
 * Find output from your extension in the debug console.
 

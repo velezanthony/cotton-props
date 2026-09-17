@@ -1,4 +1,4 @@
-# Django Cotton Props
+# Cotton Props
 
 > **IntelliSense, validación y refactorización para componentes de [Django Cotton](https://django-cotton.com/) en VS Code** — autocompletado, documentación al pasar el ratón, 19 reglas de diagnóstico, quick fixes y un explorador de componentes. Deja de adivinar nombres de props y caza los errores de plantilla antes de que lleguen al runtime.
 
@@ -6,23 +6,23 @@
 
 **Autocompleta cualquier componente, navega y acepta — sin soltar el teclado**
 
-![Autocomplete demo](https://raw.githubusercontent.com/velezanthony/django-cotton-props/main/images/autocomplete.gif)
+![Autocomplete demo](https://raw.githubusercontent.com/velezanthony/cotton-props/main/images/autocomplete.gif)
 
 **Pasa el ratón por cualquier tag y ve la documentación completa de sus props**
 
-![Hover docs](https://raw.githubusercontent.com/velezanthony/django-cotton-props/main/images/hover.png)
+![Hover docs](https://raw.githubusercontent.com/velezanthony/cotton-props/main/images/hover.png)
 
 **Caza errores mientras escribes — 19 reglas de diagnóstico**
 
-![Diagnostics](https://raw.githubusercontent.com/velezanthony/django-cotton-props/main/images/diagnostics.png)
+![Diagnostics](https://raw.githubusercontent.com/velezanthony/cotton-props/main/images/diagnostics.png)
 
 **Selecciona un componente y revisa sus props, slots y código resaltado — en la barra lateral**
 
-![Component detail panel](https://raw.githubusercontent.com/velezanthony/django-cotton-props/main/images/sidebar.png)
+![Component detail panel](https://raw.githubusercontent.com/velezanthony/cotton-props/main/images/sidebar.png)
 
 ## Primeros pasos
 
-1. **Instala** — busca **Django Cotton Props** en la vista de extensiones, o ejecuta `ext install velezanthony.django-cotton-props`.
+1. **Instala** — busca **Cotton Props** en la vista de extensiones, o ejecuta `ext install velezanthony.cotton-props`.
 2. **Requisitos** — un proyecto [Django Cotton](https://django-cotton.com/) con plantillas de componentes, y VS Code **1.97+**. La estructura por defecto `templates/cotton/` no necesita configuración.
 3. **Listo** — abre cualquier plantilla `.html` o `django-html`, escribe `<c-`, y el autocompletado, la documentación y los diagnósticos se encienden al momento.
 
@@ -147,11 +147,11 @@ Los colores se adaptan al tema activo de VS Code.
 
 ## Referencia
 
-El catálogo completo está en [`docs/REFERENCE.es.md`](https://github.com/velezanthony/django-cotton-props/blob/main/docs/REFERENCE.es.md):
+El catálogo completo está en [`docs/REFERENCE.es.md`](https://github.com/velezanthony/cotton-props/blob/main/docs/REFERENCE.es.md):
 
-- **[Sintaxis de anotaciones](https://github.com/velezanthony/django-cotton-props/blob/main/docs/REFERENCE.es.md#sintaxis-de-anotaciones)** — todos los filtros de `@prop`, el contrato de `<c-vars>` y cómo se mantienen sincronizados
-- **[Reglas de diagnóstico](https://github.com/velezanthony/django-cotton-props/blob/main/docs/REFERENCE.es.md#reglas-de-diagnóstico)** — una sección por código, con la entrada mínima que lo dispara
-- **[Ajustes](https://github.com/velezanthony/django-cotton-props/blob/main/docs/REFERENCE.es.md#ajustes)** — todas las opciones `djangoCottonProps.*`
+- **[Sintaxis de anotaciones](https://github.com/velezanthony/cotton-props/blob/main/docs/REFERENCE.es.md#sintaxis-de-anotaciones)** — todos los filtros de `@prop`, el contrato de `<c-vars>` y cómo se mantienen sincronizados
+- **[Reglas de diagnóstico](https://github.com/velezanthony/cotton-props/blob/main/docs/REFERENCE.es.md#reglas-de-diagnóstico)** — una sección por código, con la entrada mínima que lo dispara
+- **[Ajustes](https://github.com/velezanthony/cotton-props/blob/main/docs/REFERENCE.es.md#ajustes)** — todas las opciones `djangoCottonProps.*`
 
 ## Si algo no va
 

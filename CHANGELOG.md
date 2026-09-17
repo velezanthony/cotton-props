@@ -1,6 +1,6 @@
 # Change Log
 
-All notable changes to the Django Cotton Props extension are documented here.
+All notable changes to the Cotton Props extension are documented here.
 
 This project adheres to [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
@@ -29,7 +29,7 @@ This project adheres to [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ### Changed
 
-- **Diagnostics carry a source and a code.** The Problems panel renders the two together as `django-cotton-props(duplicate-usage-prop)`, so every finding says which extension produced it and which rule fired, and both are filterable. `Duplicate prop` and `Unknown prop` had codes defined but never assigned. Messages no longer repeat the extension's name, since the columns carry it.
+- **Diagnostics carry a source and a code.** The Problems panel renders the two together as `cotton-props(duplicate-usage-prop)`, so every finding says which extension produced it and which rule fired, and both are filterable. `Duplicate prop` and `Unknown prop` had codes defined but never assigned. Messages no longer repeat the extension's name, since the columns carry it.
 - **Clearing the filter is always an explicit act** — the title-bar button, `Escape` with the component tree focused, or emptying the filter box. Nothing clears it behind your back.
 - The filter box coalesces keystrokes (120 ms) so typing a word triggers one tree rebuild instead of one per character.
 - **One canonical attribute reader.** Diagnostics, inlay hints, signature help, the detail-panel highlighter, and prop rename had each grown their own attribute regex, and each leaked differently. They now share `scanTagAttributes()` / `findCottonTags()`, so a parsing fix lands everywhere at once instead of in one provider.

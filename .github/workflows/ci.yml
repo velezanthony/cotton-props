@@ -69,11 +69,11 @@ jobs:
       # Builds (esbuild --production) and produces the installable .vsix.
       # Also validates the manifest — engines, icon, README, etc.
       - name: Package extension
-        run: npx --yes @vscode/vsce package --out django-cotton-props.vsix
+        run: npx --yes @vscode/vsce package --out cotton-props.vsix
 
       - name: Upload .vsix
         uses: actions/upload-artifact@v4
         with:
-          name: django-cotton-props-vsix
-          path: django-cotton-props.vsix
+          name: cotton-props-vsix
+          path: cotton-props.vsix
           if-no-files-found: error
