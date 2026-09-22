@@ -263,9 +263,9 @@ export function activate(context: vscode.ExtensionContext) {
     // Apply `templatePaths` / `excludePaths` changes live — no window reload.
     context.subscriptions.push(
         vscode.workspace.onDidChangeConfiguration(async e => {
-            const tplChanged = e.affectsConfiguration('djangoCottonProps.templatePaths');
-            const excChanged = e.affectsConfiguration('djangoCottonProps.excludePaths');
-            const sevChanged = e.affectsConfiguration('djangoCottonProps.diagnostics.missingDescription.severity');
+            const tplChanged = e.affectsConfiguration('cottonProps.templatePaths');
+            const excChanged = e.affectsConfiguration('cottonProps.excludePaths');
+            const sevChanged = e.affectsConfiguration('cottonProps.diagnostics.missingDescription.severity');
             if (!tplChanged && !excChanged && !sevChanged) { return; }
             // The watcher glob is built from templatePaths, so only that needs it rebuilt.
             if (tplChanged) { setupWatcher(); }
@@ -327,7 +327,7 @@ function registerLanguageFeatures(
         vscode.languages.registerFoldingRangeProvider(selector, new CottonFoldingProvider()),
         vscode.languages.registerInlayHintsProvider(selector, inlayHintsProvider),
         vscode.workspace.onDidChangeConfiguration(e => {
-            if (e.affectsConfiguration('djangoCottonProps.inlayHints.showDefaults')) {
+            if (e.affectsConfiguration('cottonProps.inlayHints.showDefaults')) {
                 inlayHintsProvider.refresh();
             }
         }),

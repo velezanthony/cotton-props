@@ -250,7 +250,7 @@ suite('extractComponent (orchestrator)', () => {
         override(vscode.workspace, 'getConfiguration', (section?: string, scope?: any) => {
              
             const cfg: any = realGetConfig(section as never, scope);
-            if (section === 'djangoCottonProps') {
+            if (section === 'cottonProps') {
                 const realGet = cfg.get.bind(cfg);
                 return {
                     ...cfg,

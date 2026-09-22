@@ -4,6 +4,17 @@ Aquí se documenta todo lo reseñable de la extensión Cotton Props.
 
 Este proyecto sigue [Keep a Changelog](https://keepachangelog.com/es/1.1.0/) y [Versionado Semántico](https://semver.org/lang/es/).
 
+## [Sin publicar]
+
+### Cambiado
+
+- **BREAKING — el espacio de nombres de la configuración pasa a ser `cottonProps`, ya no `djangoCottonProps`.** La extensión se renombró a Cotton Props en la 1.0.0, pero sus ajustes se quedaron con el prefijo antiguo; los comandos, las vistas y el manifiesto ya se habían movido. No hay migración automática: VS Code no avisa de claves desconocidas, así que una clave vieja en un `settings.json` se ignora en silencio y se aplica el valor por defecto. Renómbralas a mano:
+  - `djangoCottonProps.templatePaths` → `cottonProps.templatePaths`
+  - `djangoCottonProps.excludePaths` → `cottonProps.excludePaths`
+  - `djangoCottonProps.inlayHints.showDefaults` → `cottonProps.inlayHints.showDefaults`
+  - `djangoCottonProps.dynamicAttr.showExpressionHint` → `cottonProps.dynamicAttr.showExpressionHint`
+  - `djangoCottonProps.diagnostics.missingDescription.severity` → `cottonProps.diagnostics.missingDescription.severity`
+
 ## [1.0.0] — 17/09/2026
 
 Primera versión pública — una suite completa de IntelliSense, validación y utilidades para componentes de [Django Cotton](https://django-cotton.com/) en VS Code.

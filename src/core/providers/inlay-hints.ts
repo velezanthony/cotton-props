@@ -13,7 +13,7 @@ export class CottonInlayHintsProvider implements vscode.InlayHintsProvider {
     refresh(): void { this._onDidChangeInlayHints.fire(); }
 
     provideInlayHints(document: vscode.TextDocument, range: vscode.Range): vscode.InlayHint[] {
-        const config = vscode.workspace.getConfiguration('djangoCottonProps');
+        const config = vscode.workspace.getConfiguration('cottonProps');
         if (!config.get<boolean>('inlayHints.showDefaults', true)) { return []; }
 
         const hints: vscode.InlayHint[] = [];

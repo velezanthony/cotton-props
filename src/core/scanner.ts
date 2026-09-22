@@ -79,13 +79,13 @@ export function getCachedComponent(filePath: string): ParsedComponent {
 }
 
 export function getTemplatePaths(): string[] {
-    return vscode.workspace.getConfiguration('djangoCottonProps')
+    return vscode.workspace.getConfiguration('cottonProps')
         .get<string[]>('templatePaths', ['templates/cotton']);
 }
 
 /** Directory segments the user wants excluded from the workspace usage scan. */
 export function getExcludePaths(): string[] {
-    const configured = vscode.workspace.getConfiguration('djangoCottonProps')
+    const configured = vscode.workspace.getConfiguration('cottonProps')
         .get<string[]>('excludePaths', [...DEFAULT_EXCLUDE_SEGMENTS]);
     // Defensive: drop empties so a stray "" can't produce `{,foo}` (matches all).
     const cleaned = configured.map(s => s.trim()).filter(Boolean);

@@ -17,7 +17,7 @@ type MissingDescriptionSeverity = 'hint' | 'warning' | 'off';
  */
 export function getMissingDescriptionSeverity(): MissingDescriptionSeverity {
     const raw = vscode.workspace
-        .getConfiguration('djangoCottonProps')
+        .getConfiguration('cottonProps')
         .get<string>('diagnostics.missingDescription.severity', 'hint');
     return raw === 'warning' || raw === 'off' ? raw : 'hint';
 }
@@ -28,7 +28,7 @@ export function getMissingDescriptionSeverity(): MissingDescriptionSeverity {
  * Mirror of gallery `_rules.py:check_prop_against_cvar` (description branch).
  * Default severity is Hint so legacy components don't drown in yellow
  * markers on file open. The
- * `djangoCottonProps.diagnostics.missingDescription.severity` setting
+ * `cottonProps.diagnostics.missingDescription.severity` setting
  * lets teams that want gallery-strict bump it to Warning, or disable.
  */
 export function checkMissingDescription(

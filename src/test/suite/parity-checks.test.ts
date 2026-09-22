@@ -464,7 +464,7 @@ suite('Parity: missing-description severity setting', () => {
 
     async function setSeverity(value: string | undefined) {
         await vscode.workspace
-            .getConfiguration('djangoCottonProps')
+            .getConfiguration('cottonProps')
             .update(SETTING_KEY, value, vscode.ConfigurationTarget.Workspace);
     }
 

@@ -151,14 +151,14 @@ The full catalogue lives in [`docs/REFERENCE.md`](https://github.com/velezanthon
 
 - **[Prop annotation syntax](https://github.com/velezanthony/cotton-props/blob/main/docs/REFERENCE.md#prop-annotation-syntax)** — every `@prop` filter, the `<c-vars>` contract, and how the two stay in sync
 - **[Diagnostic rules](https://github.com/velezanthony/cotton-props/blob/main/docs/REFERENCE.md#diagnostic-rules)** — one section per code, with the smallest input that triggers it
-- **[Settings](https://github.com/velezanthony/cotton-props/blob/main/docs/REFERENCE.md#settings)** — every `djangoCottonProps.*` option
+- **[Settings](https://github.com/velezanthony/cotton-props/blob/main/docs/REFERENCE.md#settings)** — every `cottonProps.*` option
 
 ## Troubleshooting
 
 <details>
 <summary><strong>Components not showing up?</strong></summary>
 
-- **No completions, or the sidebar is empty?** The extension scans `templates/cotton/` by default. If your components live elsewhere, add the folder to `djangoCottonProps.templatePaths` — path suffixes matched at any depth, so one entry covers the project root and every Django app. Changes apply live, no reload.
+- **No completions, or the sidebar is empty?** The extension scans `templates/cotton/` by default. If your components live elsewhere, add the folder to `cottonProps.templatePaths` — path suffixes matched at any depth, so one entry covers the project root and every Django app. Changes apply live, no reload.
 - **A component is flagged `unused` but it isn't?** It's reached only through a dynamic `<c-component is="...">` the indexer can't resolve. Add `{# @ignore-unused #}` inside the component file to clear the badge.
 - **A usage isn't validated?** Type checks are skipped on purpose for dynamic props (`:prop="var"`) and template expressions (`{{ }}`, `{% %}`) — those are Django values, not literals.
 
