@@ -3,7 +3,7 @@
 ## El flujo
 
 ```
-rama de trabajo  →  development  →  main  →  Marketplace
+rama de trabajo  →  development  →  main  →  release  →  Marketplace + Open VSX
 ```
 
 `main` está protegida por `guard-main.yml`: una pull request hacia ella se
@@ -11,8 +11,9 @@ rechaza si no viene de `development`. No se publica desde ningún otro sitio.
 
 ## Publicación
 
-`publish.yml` corre al hacer push a `main` y empaqueta con `vsce`. Antes de
-mergear `development` en `main`:
+`publish.yml` corre al publicar una Release en GitHub. Empaqueta una sola vez y
+manda ese `.vsix` al Marketplace y a Open VSX, que es de donde instalan Cursor,
+Windsurf y VSCodium. Antes de mergear `development` en `main`:
 
 1. **Sube `version` en `package.json`.** El Marketplace rechaza volver a subir
    una versión existente, y el fallo llega después del build.
@@ -21,6 +22,13 @@ mergear `development` en `main`:
 3. **Comprueba cómo se ve el README.** Es la página de la ficha. Las imágenes
    tienen que ser URLs absolutas de `raw.githubusercontent.com`; las rutas
    relativas se rompen ahí e `images/` no viaja en el paquete.
+
+Publicar necesita dos secrets del repositorio: `VSCE_PAT` y `OVSX_PAT`. El
+namespace de Open VSX se crea una vez, a mano, y sin él el primer publish falla:
+
+```bash
+npx ovsx create-namespace velezanthony -p "$OVSX_PAT"
+```
 
 ## Qué se publica
 

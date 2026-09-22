@@ -1,19 +1,18 @@
 name: Publish
 
-# Publishes to the VS Code Marketplace when a GitHub Release is published.
-# vsce reads the version from package.json (keep it in sync with the release
-# tag). `vsce publish` runs `vscode:prepublish` first, so type-check, lint and
-# the production build gate the publish — a broken build never ships.
+# Publishes to the Marketplace and Open VSX when a GitHub Release is published.
+# Packaged once, so both registries get the same .vsix. `vsce package` runs
+# `vscode:prepublish`, so the build still gates the publish.
 #
-# Requires a repository secret `VSCE_PAT`: an Azure DevOps Personal Access Token
-# with the Marketplace → Manage scope. vsce reads it from the VSCE_PAT env var.
+# Secrets: VSCE_PAT (Azure DevOps, Marketplace → Manage) and OVSX_PAT. The Open
+# VSX namespace must exist first: `npx ovsx create-namespace velezanthony`.
 on:
   release:
     types: [published]
 
 jobs:
   publish:
-    name: Publish to VS Code Marketplace
+    name: Publish to the Marketplace and Open VSX
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -27,7 +26,16 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Publish
-        run: npx --yes @vscode/vsce publish
+      - name: Package
+        run: npx --yes @vscode/vsce package --out extension.vsix
+
+      - name: Publish to the VS Code Marketplace
+        run: npx --yes @vscode/vsce publish --packagePath extension.vsix
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
+
+      # Where Cursor, Windsurf and VSCodium install from.
+      - name: Publish to Open VSX
+        run: npx --yes ovsx publish extension.vsix
+        env:
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}
