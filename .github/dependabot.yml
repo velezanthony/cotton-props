@@ -1,0 +1,15 @@
+version: 2
+updates:
+  # The four workflows pin their actions by major tag, and they have already
+  # drifted apart — ci.yml and publish.yml sit on actions/checkout@v4 while
+  # docs.yml is on @v5. Nothing fails, so nobody notices.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    # Without this, Dependabot opens against the default branch (main), and
+    # guard-main.yml fails every PR whose source is not `development` — the
+    # update would be unmergeable by our own rule.
+    target-branch: "development"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 3
