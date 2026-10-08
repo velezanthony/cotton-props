@@ -260,7 +260,8 @@ export function activate(context: vscode.ExtensionContext) {
         refreshDerivedViews();
     });
 
-    // Apply `templatePaths` / `excludePaths` changes live — no window reload.
+    // Apply `templatePaths`, `excludePaths` and the missing-description
+    // severity live — no window reload.
     context.subscriptions.push(
         vscode.workspace.onDidChangeConfiguration(async e => {
             const tplChanged = e.affectsConfiguration('cottonProps.templatePaths');

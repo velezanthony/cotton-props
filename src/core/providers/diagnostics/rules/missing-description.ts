@@ -23,8 +23,6 @@ export function getMissingDescriptionSeverity(): MissingDescriptionSeverity {
 }
 
 /**
- * Phase 2.6 — `missing-description`.
- *
  * Mirror of gallery `_rules.py:check_prop_against_cvar` (description branch).
  * Default severity is Hint so legacy components don't drown in yellow
  * markers on file open. The
