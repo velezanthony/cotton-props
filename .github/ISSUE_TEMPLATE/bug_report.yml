@@ -1,0 +1,124 @@
+name: Bug report
+description: Something doesn't work as expected.
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug report.
+
+        This extension reads your templates and infers from them, so **the input is
+        most of the report**. A component that reproduces the problem is worth more
+        than a paragraph describing it.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear description of what's wrong.
+      placeholder: When I do X, I see Y, but I expected Z.
+    validations:
+      required: true
+
+  - type: textarea
+    id: component
+    attributes:
+      label: The template that triggers it
+      description: |
+        The smallest component — and the usage file, if the problem shows up there —
+        that reproduces the behaviour. Paste the source, not a screenshot of it.
+      render: html
+      placeholder: |
+        {# @prop variant:select['a','b'] | default:"a" | description:"Visual style" #}
+        <c-vars variant="a" />
+        <div class="{{ variant }}">{{ slot }}</div>
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open the component above in a `django-html` file
+        2. Type `<c-` in a template under `templates/`
+        3. Notice that …
+    validations:
+      required: true
+
+  - type: input
+    id: extension-version
+    attributes:
+      label: Cotton Props version
+      description: Extensions view → Cotton Props → the version under the title.
+      placeholder: "1.0.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: editor
+    attributes:
+      label: Editor
+      description: The extension ships to the Marketplace and to Open VSX; behaviour can differ.
+      options:
+        - VS Code
+        - Cursor
+        - Windsurf
+        - VSCodium
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: editor-version
+    attributes:
+      label: Editor version
+      description: Help → About. The extension requires VS Code 1.97 or newer.
+      placeholder: "1.97.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - Linux
+        - macOS
+        - Windows
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: settings
+    attributes:
+      label: Relevant settings
+      description: |
+        Any `cottonProps.*` entry from your `settings.json` — `templatePaths` and
+        `excludePaths` decide what the extension can see at all.
+      render: json
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Errors from the extension host
+      description: |
+        Output panel → **Log (Extension Host)**, plus anything red in
+        Help → Toggle Developer Tools → Console. The extension writes no log of
+        its own, so these are where a crash shows up.
+      render: shell
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Pre-flight checks
+      options:
+        - label: I've searched existing issues and confirmed this is not a duplicate.
+          required: true
+        - label: I've reproduced this on the latest released version.
+          required: true
+        - label: I've checked it still happens with other extensions disabled (Help → Run Extension Bisect, or a clean profile).
+        - label: This is not a security vulnerability (those go through private reporting — see SECURITY.md).
+          required: true

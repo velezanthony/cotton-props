@@ -1,0 +1,53 @@
+name: Feature request
+description: Suggest a new capability or an improvement.
+title: "[feat] "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem are you trying to solve?
+      description: |
+        Describe the use case first, not the solution. "I want to ..." is more
+        useful than "Add ...".
+      placeholder: I'm working on a project with 80+ cotton components and I need to ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: |
+        How would you like this to work? If it involves an annotation, a diagnostic
+        or a setting, sketch the syntax.
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: What did you try, or what are you doing today instead?
+
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Which part of the extension?
+      options:
+        - Autocomplete / hover
+        - Diagnostics / quick fixes
+        - Navigation / refactoring (go to definition, rename, extract)
+        - Component explorer (the sidebar)
+        - Inlay hints / decorations
+        - Settings
+        - Not sure
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Scope check
+      description: This is a small project with a narrow purpose — see CONTRIBUTING.md.
+      options:
+        - label: This is about **tooling** for Django Cotton components, not about Django Cotton's own runtime behaviour.
+        - label: This reads what is already in the templates — it does not need to parse `settings.py` or run project code.
