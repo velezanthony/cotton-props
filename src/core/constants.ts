@@ -29,7 +29,7 @@ export function isSupportedLanguage(languageId: string): boolean {
 
 /** Default directory segments excluded from the workspace usage scan. `.*`
  *  matches any dot-directory (.venv, .git, .mypy_cache, …). Exposed to users
- *  via the `djangoCottonProps.excludePaths` setting — keep this in sync with
+ *  via the `cottonProps.excludePaths` setting — keep this in sync with
  *  that setting's `default` in package.json. */
 export const DEFAULT_EXCLUDE_SEGMENTS: readonly string[] = [
     'node_modules', 'dist', 'build', 'venv', '__pycache__', 'coverage', '.*',

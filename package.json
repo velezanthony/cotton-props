@@ -187,7 +187,7 @@
     "configuration": {
       "title": "Cotton Props",
       "properties": {
-        "djangoCottonProps.templatePaths": {
+        "cottonProps.templatePaths": {
           "type": "array",
           "default": [
             "templates/cotton"
@@ -197,7 +197,7 @@
           },
           "description": "Where your Cotton components live, as path suffixes matched at ANY depth: a single \"templates/cotton\" entry already covers the project root and every Django app (\"shop/templates/cotton\", \"users/templates/cotton\", …) — no need to list each app. This is declared manually on purpose: the extension never parses your Django settings (settings.py, COTTON_DIR, custom constants files), so it works no matter how the project is structured. Add more entries only for differently-named folders (e.g. \"templates/components\"). Changes apply immediately — no reload."
         },
-        "djangoCottonProps.excludePaths": {
+        "cottonProps.excludePaths": {
           "type": "array",
           "default": [
             "node_modules",
@@ -213,17 +213,17 @@
           },
           "description": "Folders to skip entirely when scanning the workspace — both where components are DEFINED (so they drop out of the tree, e.g. \"templates/cotton/icons\") and where they are USED. \".*\" matches any dot-directory (.venv, .git, .mypy_cache, …). Changes apply immediately — no reload."
         },
-        "djangoCottonProps.inlayHints.showDefaults": {
+        "cottonProps.inlayHints.showDefaults": {
           "type": "boolean",
           "default": true,
           "description": "Show default values as inlay hints for unset props in component usages"
         },
-        "djangoCottonProps.dynamicAttr.showExpressionHint": {
+        "cottonProps.dynamicAttr.showExpressionHint": {
           "type": "boolean",
           "default": true,
           "description": "Render faded {{ }} braces around dynamic :prop=\"...\" values, signalling that the value is an expression rather than a literal string. The Django-variable tint on the value comes from semantic highlighting and is not affected by this setting."
         },
-        "djangoCottonProps.diagnostics.missingDescription.severity": {
+        "cottonProps.diagnostics.missingDescription.severity": {
           "type": "string",
           "enum": [
             "hint",

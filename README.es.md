@@ -151,14 +151,14 @@ El catálogo completo está en [`docs/REFERENCE.es.md`](https://github.com/velez
 
 - **[Sintaxis de anotaciones](https://github.com/velezanthony/cotton-props/blob/main/docs/REFERENCE.es.md#sintaxis-de-anotaciones)** — todos los filtros de `@prop`, el contrato de `<c-vars>` y cómo se mantienen sincronizados
 - **[Reglas de diagnóstico](https://github.com/velezanthony/cotton-props/blob/main/docs/REFERENCE.es.md#reglas-de-diagnóstico)** — una sección por código, con la entrada mínima que lo dispara
-- **[Ajustes](https://github.com/velezanthony/cotton-props/blob/main/docs/REFERENCE.es.md#ajustes)** — todas las opciones `djangoCottonProps.*`
+- **[Ajustes](https://github.com/velezanthony/cotton-props/blob/main/docs/REFERENCE.es.md#ajustes)** — todas las opciones `cottonProps.*`
 
 ## Si algo no va
 
 <details>
 <summary><strong>¿No aparecen los componentes?</strong></summary>
 
-- **¿Sin autocompletado, o la barra lateral vacía?** La extensión escanea `templates/cotton/` por defecto. Si tus componentes están en otro sitio, añade la carpeta a `djangoCottonProps.templatePaths` — se comparan sufijos de ruta a cualquier profundidad, así que una entrada cubre la raíz del proyecto y todas las apps de Django. Los cambios se aplican en vivo, sin recargar.
+- **¿Sin autocompletado, o la barra lateral vacía?** La extensión escanea `templates/cotton/` por defecto. Si tus componentes están en otro sitio, añade la carpeta a `cottonProps.templatePaths` — se comparan sufijos de ruta a cualquier profundidad, así que una entrada cubre la raíz del proyecto y todas las apps de Django. Los cambios se aplican en vivo, sin recargar.
 - **¿Un componente marcado `unused` que sí se usa?** Solo se alcanza por un `<c-component is="...">` dinámico que el indexador no puede resolver. Añade `{# @ignore-unused #}` dentro del componente para quitar el distintivo.
 - **¿Un uso que no se valida?** Las comprobaciones de tipo se saltan a propósito en props dinámicas (`:prop="var"`) y expresiones de plantilla (`{{ }}`, `{% %}`): son valores de Django, no literales.
 

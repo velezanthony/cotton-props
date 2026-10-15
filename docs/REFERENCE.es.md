@@ -216,7 +216,7 @@ Three variants, all meaning "`@prop` and `<c-vars>` disagree about a default":
 
 #### `missing-prop-description`
 
-**Severidad:** Hint by default — configurable via `djangoCottonProps.diagnostics.missingDescription.severity` (`hint` / `warning` / `off`) · **Quick fix:** sí
+**Severidad:** Hint by default — configurable via `cottonProps.diagnostics.missingDescription.severity` (`hint` / `warning` / `off`) · **Quick fix:** sí
 
 > `'NAME': @prop has no '| description:' filter.`
 
@@ -409,11 +409,11 @@ Puntos ciegos deliberados: que una regla dispare ahí sería un bug.
 
 | Setting | Default | Description |
 |---------|---------|-------------|
-| `djangoCottonProps.templatePaths` | `["templates/cotton"]` | Path suffixes scanned for component **definitions**, matched at any depth (root + every Django app). Applies live. |
-| `djangoCottonProps.excludePaths` | `["node_modules", "dist", "build", "venv", "__pycache__", "coverage", ".*"]` | Folders skipped when scanning the workspace — both where components are **defined** (they drop out of the tree, e.g. `templates/cotton/icons`) and where they are **used**. `.*` matches any dot-directory. Applies live. |
-| `djangoCottonProps.inlayHints.showDefaults` | `true` | Show default values as inlay hints for unset props. |
-| `djangoCottonProps.dynamicAttr.showExpressionHint` | `true` | Render faded `{{ }}` braces around dynamic `:prop="…"` values. |
-| `djangoCottonProps.diagnostics.missingDescription.severity` | `"hint"` | Severity for the *missing prop description* diagnostic — `hint`, `warning`, or `off`. |
+| `cottonProps.templatePaths` | `["templates/cotton"]` | Path suffixes scanned for component **definitions**, matched at any depth (root + every Django app). Applies live. |
+| `cottonProps.excludePaths` | `["node_modules", "dist", "build", "venv", "__pycache__", "coverage", ".*"]` | Folders skipped when scanning the workspace — both where components are **defined** (they drop out of the tree, e.g. `templates/cotton/icons`) and where they are **used**. `.*` matches any dot-directory. Applies live. |
+| `cottonProps.inlayHints.showDefaults` | `true` | Show default values as inlay hints for unset props. |
+| `cottonProps.dynamicAttr.showExpressionHint` | `true` | Render faded `{{ }}` braces around dynamic `:prop="…"` values. |
+| `cottonProps.diagnostics.missingDescription.severity` | `"hint"` | Severity for the *missing prop description* diagnostic — `hint`, `warning`, or `off`. |
 
 <details>
 <summary><strong>📋 Copy-paste <code>settings.json</code></strong> — all values at their defaults</summary>
@@ -421,19 +421,19 @@ Puntos ciegos deliberados: que una regla dispare ahí sería un bug.
 ```jsonc
 {
   // Where component definitions live — path suffixes, matched at any depth.
-  "djangoCottonProps.templatePaths": ["templates/cotton"],
+  "cottonProps.templatePaths": ["templates/cotton"],
 
   // Folders skipped when scanning the workspace — both where components are defined (they drop out of the tree) and where they are used.
-  "djangoCottonProps.excludePaths": ["node_modules", "dist", "build", "venv", "__pycache__", "coverage", ".*"],
+  "cottonProps.excludePaths": ["node_modules", "dist", "build", "venv", "__pycache__", "coverage", ".*"],
 
   // Show default values as inlay hints for unset props.
-  "djangoCottonProps.inlayHints.showDefaults": true,
+  "cottonProps.inlayHints.showDefaults": true,
 
   // Render faded {{ }} braces around dynamic :prop="…" values.
-  "djangoCottonProps.dynamicAttr.showExpressionHint": true,
+  "cottonProps.dynamicAttr.showExpressionHint": true,
 
   // Severity for the "missing prop description" diagnostic: "hint" | "warning" | "off".
-  "djangoCottonProps.diagnostics.missingDescription.severity": "hint"
+  "cottonProps.diagnostics.missingDescription.severity": "hint"
 }
 ```
 

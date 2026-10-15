@@ -27,7 +27,7 @@ function computeRanges(document: vscode.TextDocument): vscode.Range[] {
 
 function enabled(): boolean {
     return vscode.workspace
-        .getConfiguration('djangoCottonProps')
+        .getConfiguration('cottonProps')
         .get<boolean>('dynamicAttr.showExpressionHint', true);
 }
 
@@ -71,7 +71,7 @@ export function createDynamicAttrDecorator(): vscode.Disposable[] {
         vscode.window.onDidChangeVisibleTextEditors(applyAll),
         vscode.workspace.onDidChangeTextDocument(e => scheduleForDoc(e.document)),
         vscode.workspace.onDidChangeConfiguration(e => {
-            if (e.affectsConfiguration('djangoCottonProps.dynamicAttr.showExpressionHint')) { applyAll(); }
+            if (e.affectsConfiguration('cottonProps.dynamicAttr.showExpressionHint')) { applyAll(); }
         }),
     ];
 }

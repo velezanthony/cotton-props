@@ -51,7 +51,7 @@ export async function extractComponent() {
 
     if (!isInside(workspaceRoot, targetPath)) {
         vscode.window.showErrorMessage(
-            `Refused to write outside workspace root (check djangoCottonProps.templatePaths setting).`,
+            `Refused to write outside workspace root (check cottonProps.templatePaths setting).`,
         );
         return;
     }

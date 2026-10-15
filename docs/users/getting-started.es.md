@@ -28,7 +28,7 @@ Si tus componentes están en otro sitio, apúntala hacia ellos:
 
 ```jsonc
 {
-  "djangoCottonProps.templatePaths": ["templates/cotton", "ui/components"]
+  "cottonProps.templatePaths": ["templates/cotton", "ui/components"]
 }
 ```
 
