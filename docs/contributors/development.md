@@ -28,6 +28,7 @@ your change and type errors surface in the terminal rather than at package time.
 | `npm run lint` | eslint over `src` |
 | `npm test` | the full suite — see [testing](testing.md) |
 | `npm run package` | production bundle, what ships |
+| `npm run dev --prefix docs-site` | the docs site, live; needs `npm ci --prefix docs-site` once and Node >=22.23.4 |
 
 `npm test` runs `pretest` first, so it already compiles and lints. There is
 rarely a reason to run `compile` by hand.

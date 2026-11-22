@@ -49,7 +49,7 @@ cosas coinciden. Existen porque la alternativa es acordarse.
 | Guardián | Fija |
 |---|---|
 | `diagnostic-metadata.test.ts` | cada `DIAG_CODE` tiene sección en `docs/REFERENCE.md`, y ninguna sección nombra un código inexistente |
-| `docs-workflow.test.ts` | cada página del nav está cubierta por el filtro `paths:`, y el venv de docs se construye fuera del checkout |
+| `docs-workflow.test.ts` | cada página que publica docs-site (`docs/` y `content.external`) está cubierta por el filtro `paths:`, y el workflow construye `docs-site/` con un Node que la librería acepta |
 
 Los dos fallan en **ambas** direcciones. Un guardián que solo caza una es medio
 guardián.
@@ -121,6 +121,6 @@ lanzarla.
 mueren nunca, así que la espera no vuelve jamás.
 
 **Los guardianes leen el árbol de trabajo, no el commit.**
-`docs-workflow.test.ts` parsea `mkdocs.yml` y `docs.yml` desde disco, así que
+`docs-workflow.test.ts` parsea `docs-site/docs.config.mjs` y `docs.yml` desde disco, así que
 falla con ediciones sin commitear — que es lo que quieres, y conviene saberlo
 cuando un fallo te sorprenda.

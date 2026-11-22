@@ -160,8 +160,8 @@ del panel de Problems, y `diagnostic-metadata.test.ts` falla si un código no
 tiene sección en `docs/REFERENCE.md` — o si una sección nombra un código que ya
 no existe.
 
-**Cada página publicada la vigila el CI.** `docs-workflow.test.ts` compara el
-nav de mkdocs con el filtro `paths:` del workflow. Una página fuera de él se
+**Cada página publicada la vigila el CI.** `docs-workflow.test.ts` compara las
+páginas que publica docs-site con el filtro `paths:` del workflow. Una página fuera de él se
 mergea sin ruido y el sitio deja de actualizarse en silencio.
 
 **Factorías de regex, nunca constantes compartidas.** Una regex `/g` arrastra

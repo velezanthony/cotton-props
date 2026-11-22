@@ -159,7 +159,7 @@ panel filter, and `diagnostic-metadata.test.ts` fails if a code has no section
 in `docs/REFERENCE.md` — or if a section names a code that no longer exists.
 
 **Every published page is watched by CI.** `docs-workflow.test.ts` compares the
-mkdocs nav against the workflow's `paths:` filter. A page outside it merges
+pages docs-site publishes against the workflow's `paths:` filter. A page outside it merges
 cleanly and the site silently stops updating.
 
 **Regex factories, never shared constants.** A `/g` regex carries mutable
