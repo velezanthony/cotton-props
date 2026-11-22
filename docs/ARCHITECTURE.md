@@ -10,7 +10,7 @@ Answering it needs two things — a map from tag name to file, and a parse of th
 file's annotations. Every feature is a different presentation of those two
 answers.
 
-```
+```text
                       extension.ts
                    (wiring, nothing else)
                             │

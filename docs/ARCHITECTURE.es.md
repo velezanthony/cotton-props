@@ -10,7 +10,7 @@ necesita dos cosas — un mapa de nombre de tag a fichero, y un parseo de las
 anotaciones de ese fichero. Cada funcionalidad es una presentación distinta de
 esas dos respuestas.
 
-```
+```text
                       extension.ts
                    (cableado, nada más)
                             │

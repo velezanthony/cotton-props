@@ -4,7 +4,7 @@
 
 Busca **Cotton Props** en la vista de extensiones, o:
 
-```
+```text
 ext install velezanthony.cotton-props
 ```
 
@@ -63,7 +63,7 @@ la [referencia](../REFERENCE.es.md#sintaxis-de-anotaciones).
 Los hallazgos llevan un origen y un código, que el panel de Problems muestra
 juntos:
 
-```
+```text
 cotton-props(sync-default)
 ```
 

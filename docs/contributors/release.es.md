@@ -2,7 +2,7 @@
 
 ## El flujo
 
-```
+```text
 rama de trabajo  →  development  →  main  →  release  →  Marketplace + Open VSX
 ```
 
