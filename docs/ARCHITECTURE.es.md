@@ -3,6 +3,9 @@
 Cómo está montada la extensión, y por qué está montada así. Escrito para quien
 va a cambiarla.
 
+Por qué se escribió y qué enseñó está en el
+[caso de estudio](https://velezanthony.github.io/proyectos/cotton-props/).
+
 ## La forma
 
 Todo cuelga de una pregunta: *¿qué props acepta `<c-atoms.button>`?* Contestarla

@@ -3,6 +3,9 @@
 How the extension is put together, and why it is put together that way. Written
 for someone about to change it.
 
+Why it was written at all, and what it taught, is the
+[case study](https://velezanthony.github.io/en/projects/cotton-props/).
+
 ## The shape
 
 Everything hangs off one question: *what props does `<c-atoms.button>` accept?*
