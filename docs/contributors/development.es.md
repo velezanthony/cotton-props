@@ -28,6 +28,7 @@ recoge tu cambio y los errores de tipos salen en la terminal, no al empaquetar.
 | `npm run lint` | eslint sobre `src` |
 | `npm test` | la suite completa — mira [tests](testing.es.md) |
 | `npm run package` | bundle de producción, lo que se publica |
+| `npm run dev --prefix docs-site` | el sitio de docs, en vivo; necesita `npm ci --prefix docs-site` una vez y Node >=22.23.4 |
 
 `npm test` ejecuta `pretest` antes, así que ya compila y pasa el linter. Rara vez
 hay motivo para lanzar `compile` a mano.

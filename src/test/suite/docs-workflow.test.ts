@@ -9,14 +9,21 @@ import * as path from 'path';
  */
 
 const ROOT = path.resolve(__dirname, '..', '..', '..');
-const MKDOCS = fs.readFileSync(path.join(ROOT, 'mkdocs.yml'), 'utf-8');
+const SITE = path.join(ROOT, 'docs-site');
+const DOCS_CONFIG = fs.readFileSync(path.join(SITE, 'docs.config.mjs'), 'utf-8');
+const ASTRO_CONFIG = fs.readFileSync(path.join(SITE, 'astro.config.mjs'), 'utf-8');
 const WORKFLOW = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'docs.yml'), 'utf-8');
 
-/** Every `.md` the nav publishes, as written. */
-function navDocuments(): string[] {
-    const nav = /^nav:\n((?:[ \t]+.*\n|\n)*)/m.exec(MKDOCS);
-    assert.ok(nav, 'no nav block in mkdocs.yml');
-    return [...nav[1].matchAll(/([\w./-]+\.md)\s*$/gm)].map(m => m[1]);
+/** Every page under docs/, relative to the repository root. */
+function docsDocuments(): string[] {
+    return fs.readdirSync(path.join(ROOT, 'docs'), { recursive: true, encoding: 'utf-8' })
+        .filter(file => file.endsWith('.md'))
+        .map(file => `docs/${file.split(path.sep).join('/')}`);
+}
+
+/** Every `content.external` file, relative to the repository root. */
+function externalDocuments(): string[] {
+    return [...DOCS_CONFIG.matchAll(/file:\s*'\.\.\/([^']+\.md)'/g)].map(m => m[1]);
 }
 
 /** The `paths:` entries of the workflow's push trigger. */
@@ -44,24 +51,55 @@ function covered(doc: string, watched: string[]): boolean {
     });
 }
 
+/** Dotted versions compared numerically; true when `version` is at least `minimum`. */
+function atLeast(version: string, minimum: string): boolean {
+    const [a, b] = [version, minimum].map(v => v.split('.').map(Number));
+    for (let i = 0; i < b.length; i++) {
+        if (a[i] === undefined) { return false; }  // `22` could be 22.0.0
+        if (a[i] !== b[i]) { return a[i] > b[i]; }
+    }
+    return true;
+}
+
 suite('Docs workflow: watches what the site publishes', () => {
 
-    test('both lists parse', () => {
+    test('all lists parse', () => {
         // Without this, a parse that matched nothing would make every assertion
         // below compare two empty lists and pass.
-        assert.ok(navDocuments().length > 3, 'nav parsed as empty');
+        assert.ok(docsDocuments().length > 3, 'docs/ listed as empty');
+        assert.ok(externalDocuments().length > 3, 'content.external parsed as empty');
         assert.ok(watchedPaths().length > 3, 'paths parsed as empty');
     });
 
-    test('watches every document the nav publishes', () => {
-        const watched = watchedPaths();
-        const missing = navDocuments().filter(d => !covered(d, watched));
-        assert.deepStrictEqual(missing, [], 'in the nav, not in paths — edits would not rebuild');
+    test('publishes every page under docs/, at the URL MkDocs gave it', () => {
+        // Each one is an `external` whose slug is its path, so /docs/REFERENCE/
+        // stays /docs/REFERENCE/. A new page without an entry is never published.
+        const slugs = new Map(
+            [...DOCS_CONFIG.matchAll(/slug:\s*'([^']+)',\s*file:\s*'\.\.\/([^']+)\.md'/g)]
+                .map(m => [m[2], m[1]]),
+        );
+        const wrong = docsDocuments()
+            .filter(d => !d.endsWith('.es.md'))
+            .map(d => d.replace(/\.md$/, ''))
+            .filter(d => slugs.get(d) !== d.replace(/\/index$/, ''));
+        assert.deepStrictEqual(wrong, [], 'under docs/, not published at its MkDocs URL');
     });
 
-    test('watches every Spanish sibling, which the nav never names', () => {
+    test('watches every page under docs/', () => {
         const watched = watchedPaths();
-        const missing = navDocuments()
+        const missing = docsDocuments().filter(d => !covered(d, watched));
+        assert.deepStrictEqual(missing, [], 'published, not in paths — edits would not rebuild');
+    });
+
+    test('watches every external document', () => {
+        const watched = watchedPaths();
+        const missing = externalDocuments().filter(d => !covered(d, watched));
+        assert.deepStrictEqual(missing, [], 'in content.external, not in paths — edits would not rebuild');
+    });
+
+    test('watches every Spanish sibling, which the config never names', () => {
+        const watched = watchedPaths();
+        const missing = externalDocuments()
             .map(d => d.replace(/\.md$/, '.es.md'))
             .filter(d => fs.existsSync(path.join(ROOT, d)))
             .filter(d => !covered(d, watched));
@@ -70,31 +108,26 @@ suite('Docs workflow: watches what the site publishes', () => {
 
     test('watches its own definition', () => {
         const watched = watchedPaths();
-        assert.ok(watched.includes('mkdocs.yml'), 'mkdocs.yml not watched');
+        assert.ok(watched.includes('docs-site/**'), 'docs-site/ not watched');
         assert.ok(watched.includes('.github/workflows/docs.yml'), 'the workflow does not watch itself');
     });
 
-    test('names the site url, without which the sitemap is inert', () => {
-        assert.ok(/^site_url:\s*https?:\/\/\S+/m.test(MKDOCS), 'no site_url in mkdocs.yml');
+    test('names the site and its base, without which the sitemap is inert', () => {
+        assert.ok(/site:\s*'https:\/\/\S+'/.test(ASTRO_CONFIG), 'no site in docs-site/astro.config.mjs');
+        assert.ok(/base:\s*'\/cotton-props'/.test(ASTRO_CONFIG), 'base is not /cotton-props');
     });
 
-    test('builds the venv outside the checkout', () => {
-        // mkdocs-static-i18n treats anything under docs_dir as the user's, and
-        // same-dir makes docs_dir the repository root — a venv inside it puts
-        // the theme's own assets in scope and the build dies copying them.
-        const venv = /uv venv[^\n]*?["']?(\$\{?\w+\}?[^"'\s]*|\/[^"'\s]+)["']?\s*$/m.exec(WORKFLOW);
-        assert.ok(venv, 'uv venv is given no path — it would create .venv in the checkout');
-
-        const target = venv[1];
-        const outside = target.startsWith('$RUNNER_TEMP') || target.startsWith('/');
-        assert.ok(outside, `the venv must live outside the checkout, got ${target}`);
+    test('builds docs-site with Node, not the extension', () => {
+        assert.ok(/working-directory:\s*docs-site\b/.test(WORKFLOW), 'the build does not run in docs-site/');
+        assert.ok(/npm ci/.test(WORKFLOW) && /npm run build/.test(WORKFLOW), 'no npm ci && npm run build');
+        assert.ok(/path:\s*docs-site\/dist\/?\s*$/m.test(WORKFLOW), 'the Pages artifact is not docs-site/dist');
     });
 
-    test('installs into that venv rather than the ambient python', () => {
-        // `uv venv` ships no pip, so anything reaching for `python -m pip` fails.
-        assert.ok(
-            /uv pip install --python\s+"\$RUNNER_TEMP/.test(WORKFLOW),
-            'uv pip install must target the venv interpreter explicitly',
-        );
+    test('uses a Node the library accepts', () => {
+        // @velezanthony/design declares engines.node >=22.23.4.
+        const node = /node-version:\s*['"]?([\d.]+)/.exec(WORKFLOW);
+        assert.ok(node, 'setup-node is given no node-version');
+        const ok = Number(node[1].split('.')[0]) >= 23 || atLeast(node[1], '22.23.4');
+        assert.ok(ok, `node ${node[1]} may be older than 22.23.4`);
     });
 });

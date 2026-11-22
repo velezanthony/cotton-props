@@ -4,7 +4,7 @@
 
 Search **Cotton Props** in the Extensions view, or:
 
-```
+```text
 ext install velezanthony.cotton-props
 ```
 
@@ -60,7 +60,7 @@ Every filter, every type, and the full `<c-vars>` contract are in the
 
 Findings carry a source and a code, rendered together in the Problems panel:
 
-```
+```text
 cotton-props(sync-default)
 ```
 

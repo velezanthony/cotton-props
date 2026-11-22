@@ -3,6 +3,9 @@
 How the extension is put together, and why it is put together that way. Written
 for someone about to change it.
 
+Why it was written at all, and what it taught, is the
+[case study](https://velezanthony.github.io/en/projects/cotton-props/).
+
 ## The shape
 
 Everything hangs off one question: *what props does `<c-atoms.button>` accept?*
@@ -10,7 +13,7 @@ Answering it needs two things — a map from tag name to file, and a parse of th
 file's annotations. Every feature is a different presentation of those two
 answers.
 
-```
+```text
                       extension.ts
                    (wiring, nothing else)
                             │
@@ -159,7 +162,7 @@ panel filter, and `diagnostic-metadata.test.ts` fails if a code has no section
 in `docs/REFERENCE.md` — or if a section names a code that no longer exists.
 
 **Every published page is watched by CI.** `docs-workflow.test.ts` compares the
-mkdocs nav against the workflow's `paths:` filter. A page outside it merges
+pages docs-site publishes against the workflow's `paths:` filter. A page outside it merges
 cleanly and the site silently stops updating.
 
 **Regex factories, never shared constants.** A `/g` regex carries mutable

@@ -114,7 +114,7 @@ Usage — `name`, `placeholder`, `type` pass through via `attrs`:
 
 Every diagnostic this extension reports carries a **source** and a **code**, which the Problems panel renders together:
 
-```
+```text
 cotton-props(duplicate-usage-prop)
 ```
 

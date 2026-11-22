@@ -114,7 +114,7 @@ Usage — `name`, `placeholder`, `type` pass through via `attrs`:
 
 Cada diagnóstico que reporta la extensión lleva un **origen** y un **código**, que el panel de Problems muestra juntos:
 
-```
+```text
 cotton-props(duplicate-usage-prop)
 ```
 

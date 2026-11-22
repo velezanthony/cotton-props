@@ -3,6 +3,9 @@
 Cómo está montada la extensión, y por qué está montada así. Escrito para quien
 va a cambiarla.
 
+Por qué se escribió y qué enseñó está en el
+[caso de estudio](https://velezanthony.github.io/proyectos/cotton-props/).
+
 ## La forma
 
 Todo cuelga de una pregunta: *¿qué props acepta `<c-atoms.button>`?* Contestarla
@@ -10,7 +13,7 @@ necesita dos cosas — un mapa de nombre de tag a fichero, y un parseo de las
 anotaciones de ese fichero. Cada funcionalidad es una presentación distinta de
 esas dos respuestas.
 
-```
+```text
                       extension.ts
                    (cableado, nada más)
                             │
@@ -160,8 +163,8 @@ del panel de Problems, y `diagnostic-metadata.test.ts` falla si un código no
 tiene sección en `docs/REFERENCE.md` — o si una sección nombra un código que ya
 no existe.
 
-**Cada página publicada la vigila el CI.** `docs-workflow.test.ts` compara el
-nav de mkdocs con el filtro `paths:` del workflow. Una página fuera de él se
+**Cada página publicada la vigila el CI.** `docs-workflow.test.ts` compara las
+páginas que publica docs-site con el filtro `paths:` del workflow. Una página fuera de él se
 mergea sin ruido y el sitio deja de actualizarse en silencio.
 
 **Factorías de regex, nunca constantes compartidas.** Una regex `/g` arrastra

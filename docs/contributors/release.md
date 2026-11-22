@@ -2,7 +2,7 @@
 
 ## The flow
 
-```
+```text
 feature branch  →  development  →  main  →  release  →  Marketplace + Open VSX
 ```
 

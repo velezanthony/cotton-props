@@ -1,11 +1,12 @@
 # Publishes https://velezanthony.github.io/cotton-props/
 #
-# The whole Python toolchain lives in this file so contributors need no second
-# one; nothing in package.json references it.
+# docs-site/ is its own Node project (Astro + @velezanthony/design) with its own
+# package-lock.json; nothing in the extension's package.json references it.
 #
 # The `paths:` filter is a second list of what the site publishes. It drifting
-# out of sync with mkdocs.yml is silent in the worst way — the workflow does not
-# fail, it does not run — so docs-workflow.test.ts pins the two together.
+# out of sync with docs-site/docs.config.mjs is silent in the worst way — the
+# workflow does not fail, it does not run — so docs-workflow.test.ts pins the
+# two together.
 name: Docs
 
 on:
@@ -14,9 +15,8 @@ on:
     paths:
       - 'docs/**'
       - '*.md'
-      - '**.es.md'
-      - 'src/**/README.md'
-      - 'mkdocs.yml'
+      - 'src/**/README*.md'
+      - 'docs-site/**'
       - '.github/workflows/docs.yml'
   workflow_dispatch:
 
@@ -29,51 +29,35 @@ concurrency:
   group: pages
   cancel-in-progress: false
 
-
 jobs:
   build:
     name: Build site
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: docs-site
     steps:
       - uses: actions/checkout@v5
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v6
         with:
-          enable-cache: true
+          # The sitemap's <lastmod> is each file's last commit; a shallow clone has none.
+          fetch-depth: 0
 
-      # OUTSIDE the checkout, and that matters. mkdocs-static-i18n decides a
-      # file is the user's by testing whether it sits under docs_dir, which
-      # `same-dir` makes the repository root — so a venv in the root puts the
-      # theme's own assets inside that test and the build dies copying them.
-      - name: Set up Python
-        run: uv venv --python 3.12 "$RUNNER_TEMP/docs-venv"
+      - name: Set up Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: docs-site/package-lock.json
 
-      # same-dir is what makes `docs_dir: .` legal.
-      - name: Install the docs toolchain
-        run: >-
-          uv pip install --python "$RUNNER_TEMP/docs-venv/bin/python"
-          'mkdocs>=1.6,<2'
-          'mkdocs-material>=9.5,<10'
-          'pymdown-extensions>=10,<11'
-          'mkdocs-same-dir>=0.1.3,<0.2'
-          'mkdocs-static-i18n>=1.3,<2'
+      - name: Install dependencies
+        run: npm ci
 
-      # --strict misses links to excluded files, hence the second step.
+      # The library's build is strict: a broken link or anchor fails it.
       - name: Build site
-        # mkdocs.yml reads this through !ENV and falls back to "".
+        # Empty in forks and locally, so those builds carry no analytics.
         env:
           PUBLIC_GTM_ID: ${{ secrets.PUBLIC_GTM_ID }}
-        run: |
-          set -o pipefail
-          "$RUNNER_TEMP/docs-venv/bin/mkdocs" build --strict 2>&1 | tee build.log
-
-      - name: Fail on links to excluded files
-        run: |
-          if grep -F 'which is excluded from the built site' build.log; then
-            echo "::error::A published page links to a file excluded by exclude_docs — it will 404. Link to github.com instead."
-            exit 1
-          fi
+        run: npm run build
 
       # development validates only; a Pages failure there would read as broken docs.
       - name: Configure Pages
@@ -83,7 +67,7 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         if: github.ref == 'refs/heads/main'
         with:
-          path: site/
+          path: docs-site/dist
 
   deploy:
     name: Deploy to GitHub Pages

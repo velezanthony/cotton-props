@@ -43,13 +43,9 @@ icon.svg
 # ── The documentation site ── README.md and CHANGELOG.md are the only two the
 # Marketplace reads; the rest lives on GitHub Pages.
 docs/**
-mkdocs.yml
+# The Astro project, with its own node_modules.
+docs-site/**
 # The Marketplace page is English only.
 **/*.es.md
-site/**
-build.log
 CONTRIBUTING.md
 SECURITY.md
-
-# The local mkdocs venv — thousands of files a deny-list would otherwise ship.
-.venv/**

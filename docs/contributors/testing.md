@@ -54,7 +54,7 @@ They exist because the alternative is remembering.
 | Guard | Pins |
 |---|---|
 | `diagnostic-metadata.test.ts` | every `DIAG_CODE` has a section in `docs/REFERENCE.md`, and no section names a code that no longer exists |
-| `docs-workflow.test.ts` | every page in the mkdocs nav is covered by the workflow's `paths:` filter, and the docs venv is built outside the checkout |
+| `docs-workflow.test.ts` | every page docs-site publishes (`docs/` and `content.external`) is covered by the workflow's `paths:` filter, and the workflow builds `docs-site/` with a Node the library accepts |
 
 Both fail in **both** directions. A guard that only catches one is half a guard.
 
@@ -125,5 +125,5 @@ again.
 never exit, so the wait never returns.
 
 **Guard tests read the working tree, not the commit.** `docs-workflow.test.ts`
-parses `mkdocs.yml` and `docs.yml` from disk, so it fails on uncommitted edits —
+parses `docs-site/docs.config.mjs` and `docs.yml` from disk, so it fails on uncommitted edits —
 which is what you want, and worth knowing when a failure surprises you.
